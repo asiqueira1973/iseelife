@@ -1,0 +1,34 @@
+{
+  "identifier" : "ISEELIFE-STOREKIT-CONFIG",
+  "nonRenewingSubscriptions" : [],
+  "products" : [
+    {
+      "displayPrice" : "49.90",
+      "familyShareable" : false,
+      "internalID" : "ISEELIFE-DESBLOQUEIO",
+      "localizations" : [
+        {
+          "description" : "Desbloqueie a captura de fotos com um pagamento único, sem assinatura.",
+          "displayName" : "I See Life — completo",
+          "locale" : "pt_BR"
+        },
+        {
+          "description" : "Unlock photo capture with a single one-time purchase, no subscription.",
+          "displayName" : "I See Life — full",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "iseelife_desbloqueio_completo",
+      "referenceName" : "Desbloqueio completo (compra única)",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_storeKitErrors" : []
+  },
+  "subscriptionGroups" : [],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

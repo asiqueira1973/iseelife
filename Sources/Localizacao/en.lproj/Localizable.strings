@@ -1,0 +1,79 @@
+/* Localizable.strings (en) — I See Life. */
+
+/* Onboarding — Welcome (screen 01, epic 8.6) */
+"onboarding_welcome_tagline" = "The street the way you see it. Look baked in at the shutter, no editing after.";
+"onboarding_continue" = "Continue";
+
+/* Onboarding — Camera permission (screen 02, epic 8.6) */
+"onboarding_camera_title" = "Camera access";
+"onboarding_camera_body" = "I See Life uses the camera for the viewfinder and capture. Nothing leaves your device.";
+"onboarding_camera_allow" = "Allow access";
+"onboarding_camera_note" = "The system prompt appears next.";
+
+/* Viewfinder — shared (screens 03/04) */
+"mode_street" = "STREET";
+"mode_pro" = "PRO";
+"focus_lock" = "AE/AF LOCK";
+
+/* Recipe selector (screen 05, epic 8.4) */
+"recipes_title" = "Recipes";
+"close" = "Close";
+"recipes_live_note" = "Thumbnails are a live camera preview.";
+
+/* Pro Mode panel (screen 04, epic 8.2) */
+"pro_iso" = "ISO";
+"pro_shutter" = "SHUTTER";
+"pro_exposure" = "EXPOSURE";
+"pro_focus" = "FOCUS";
+"pro_wb_temp" = "WB TEMPERATURE";
+"pro_wb_tint" = "WB TINT";
+"pro_zebra" = "Zebra";
+"pro_peaking" = "Peaking";
+"pro_grid" = "Grid";
+"pro_level" = "Level";
+
+/* Paywall (screens 06/06b, epic 8.7) */
+"paywall_title" = "Unlock I See Life";
+"paywall_subtitle" = "One-time purchase, no subscription.";
+"paywall_feature_1" = "Unlimited capture with all 4 color recipes";
+"paywall_feature_2" = "Fast Street Mode and manual Pro Mode";
+"paywall_feature_3" = "JPEG ready instantly, straight to your Photos";
+"paywall_feature_4" = "100% offline, no account, no ads";
+"paywall_buy" = "Buy";
+"paywall_one_time" = "one-time payment";
+"paywall_restore" = "Restore purchase";
+"paywall_processing_title" = "Processing purchase";
+"paywall_processing_note" = "Don't close the app.";
+"paywall_error_title" = "Couldn't complete the purchase";
+"paywall_error_body" = "You weren't charged. Check your App Store connection and try again.";
+"paywall_retry" = "Try again";
+"paywall_not_now" = "Not now";
+
+/* Settings (screen 07, epic 8.8) */
+"settings_title" = "Settings";
+"settings_language" = "LANGUAGE";
+"settings_lang_pt" = "Português";
+"settings_lang_en" = "English";
+"settings_viewfinder" = "VIEWFINDER";
+"settings_grid" = "Rule-of-thirds grid";
+"settings_level" = "Level indicator";
+"settings_bw_preview" = "B&W preview in Street Mode";
+"settings_capture" = "CAPTURE";
+"settings_silent" = "Silent shutter";
+"settings_purchase" = "PURCHASE";
+"settings_restore" = "Restore purchase";
+"settings_version" = "version %@";
+
+/* Permission denied (screen 08, epic 8.5) */
+"denied_camera_title" = "No camera access";
+"denied_camera_body" = "I See Life needs the camera to work. Re-enable it in Settings › I See Life.";
+"denied_photos_title" = "No photos access";
+"denied_photos_body" = "To save your photos, allow Photos access in Settings › I See Life.";
+"denied_open_settings" = "Open Settings";
+"denied_secondary" = "Not now";
+
+/* Capture alert when photos permission is denied (exception flow, section 9) */
+"photos_alert_title" = "Couldn't save";
+"photos_alert_body" = "Your photo is held here. Allow Photos access to save it.";
+"photos_alert_retry" = "Allow and save";
+"photos_alert_discard" = "Discard";

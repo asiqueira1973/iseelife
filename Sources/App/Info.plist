@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>pt-BR</string>
+	<key>CFBundleDisplayName</key>
+	<string>I See Life</string>
+	<key>CFBundleExecutable</key>
+	<string>$(EXECUTABLE_NAME)</string>
+	<key>CFBundleIdentifier</key>
+	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundleName</key>
+	<string>$(PRODUCT_NAME)</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>$(MARKETING_VERSION)</string>
+	<key>CFBundleVersion</key>
+	<string>$(CURRENT_PROJECT_VERSION)</string>
+	<!-- Info.plist manual: precisa declarar CFBundleIconName à mão, senão a loja
+	     rejeita o build (aprendizado de projetos anteriores com XcodeGen). -->
+	<key>CFBundleIconName</key>
+	<string>AppIcon</string>
+	<key>LSRequiresIPhoneOS</key>
+	<true/>
+	<!-- Localização: pt-BR base + en. A troca em tempo real é feita em runtime pelo
+	     LocalizationManager (épico 8.8), mas o app também declara os idiomas suportados. -->
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>pt-BR</string>
+		<string>en</string>
+	</array>
+	<!-- Permissões (spec seção 8.5 / 20). Câmera pedida no onboarding; biblioteca de
+	     fotos pedida só no momento da primeira captura, com justificativa. -->
+	<key>NSCameraUsageDescription</key>
+	<string>O I See Life usa a câmera do seu iPhone para o visor e para capturar as fotos. Nada sai do aparelho.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>O I See Life precisa de acesso para salvar as fotos que você captura direto na sua Fototeca.</string>
+	<!-- Orientação: retrato apenas no MVP (spec 17). -->
+	<key>UISupportedInterfaceOrientations</key>
+	<array>
+		<string>UIInterfaceOrientationPortrait</string>
+	</array>
+	<key>UIRequiresFullScreen</key>
+	<true/>
+	<key>UIApplicationSceneManifest</key>
+	<dict>
+		<key>UIApplicationSupportsMultipleScenes</key>
+		<false/>
+	</dict>
+	<!-- Launch screen preto — consistente com o princípio de visor sempre preto (spec 0.4/16). -->
+	<key>UILaunchScreen</key>
+	<dict>
+		<key>UIColorName</key>
+		<string></string>
+	</dict>
+	<key>UIStatusBarStyle</key>
+	<string>UIStatusBarStyleLightContent</string>
+	<key>UIUserInterfaceStyle</key>
+	<string>Dark</string>
+</dict>
+</plist>

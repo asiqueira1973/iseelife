@@ -1,0 +1,63 @@
+Table configuracao_usuario {
+  id uuid [pk]
+  idioma_preferido idioma_preferido [not null, default: 'pt']
+  modo_padrao modo_captura [not null, default: 'rua']
+  ultima_lente_usada lente_camera
+  grid_ativado bool [not null, default: true]
+  nivel_ativado bool [not null, default: true]
+  obturador_silencioso bool [not null, default: true]
+  preview_pb_ativado bool [not null, default: false]
+  compra_desbloqueada bool [not null, default: false]
+  data_compra datetime
+
+  Note: 'Configuração local única do usuário — linha singleton, criada no primeiro uso do app. Sem backend, sem sincronização.'
+}
+
+Table receita {
+  id uuid [pk]
+  nome_exibicao text [not null]
+  inspiracao text [not null]
+  highlight int [not null]
+  shadow int [not null]
+  saturacao int [not null]
+  temperatura_wb_kelvin int
+  tinta_wb int [not null, default: 0]
+  intensidade_grao intensidade_grao [not null, default: 'nenhum']
+  nitidez int [not null]
+  monocromatico bool [not null, default: false]
+  filtro_mono filtro_mono
+  ordem_exibicao int [not null]
+
+  Note: 'Catálogo fixo de receitas (film simulation) — seed no primeiro lançamento, somente leitura no MVP. 4 linhas: Classic, Soft, Mono, Positivo.'
+}
+
+enum idioma_preferido {
+  pt
+  en
+}
+
+enum modo_captura {
+  rua
+  pro
+}
+
+enum lente_camera {
+  wide
+  ultra_wide
+}
+
+enum intensidade_grao {
+  nenhum
+  fraco
+  medio
+  forte
+}
+
+enum filtro_mono {
+  nenhum
+  amarelo
+  vermelho
+  verde
+}
+
+// Não há relações entre as tabelas — entidades independentes, sem chave estrangeira.

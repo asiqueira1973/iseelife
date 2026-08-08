@@ -1,0 +1,171 @@
+// ViewfinderViewModel.swift
+// Orquestra o visor: modo (Rua/Pro), receita ativa, troca de lente, toque para travar foco
+// (épico 8.1), disparo com gate de paywall (regra 11.4) e salvamento na Fototeca (épico 8.5).
+// É a cola entre a CameraSession, o StoreManager e a `configuracao_usuario` (SwiftData).
+
+import SwiftUI
+import SwiftData
+
+@MainActor
+final class ViewfinderViewModel: ObservableObject {
+
+    let camera: CameraSession
+    let store: StoreManager
+    private let context: ModelContext
+    let config: ConfiguracaoUsuario
+    let receitas: [Receita]
+
+    @Published var modo: ModoCaptura
+    @Published var receitaAtiva: Receita
+    @Published var mostrandoSeletor = false
+    @Published var mostrandoConfiguracoes = false
+    @Published var mostrandoPaywall = false
+    @Published var capturando = false                 // flash breve de captura
+    @Published var focoTravadoPontoView: CGPoint?     // ponto do indicador AE/AF LOCK
+    @Published var fotoPendente: Data?                // foto em memória aguardando salvar
+    @Published var mostrandoAlertaFotos = false       // permissão de fotos negada (seção 9)
+
+    init(camera: CameraSession, store: StoreManager, context: ModelContext,
+         config: ConfiguracaoUsuario, receitas: [Receita]) {
+        self.camera = camera
+        self.store = store
+        self.context = context
+        self.config = config
+        self.receitas = receitas
+        self.modo = config.modoPadrao
+
+        // Receita ativa: a última salva, ou a de ordem 1 como padrão neutro (regra 11.3).
+        let padrao = receitas.first(where: { $0.ordemExibicao == 1 }) ?? receitas.first!
+        self.receitaAtiva = receitas.first(where: { $0.id == config.receitaAtivaID }) ?? padrao
+
+        camera.definirReceitaAtiva(receitaAtiva)
+        camera.definirPreviewPB(config.previewPbAtivado)
+        camera.definirModoPro(modo == .pro)
+    }
+
+    // MARK: - Ciclo de vida
+
+    // Inicia a sessão na última lente usada (épico 8.3) e sincroniza posse do produto.
+    func aoAparecer() {
+        camera.atualizarStatusPermissao()
+        camera.iniciar(lentePreferida: config.ultimaLenteUsada)
+        camera.definirPreviewPB(config.previewPbAtivado)
+        Task {
+            await store.carregarProduto()
+            if await store.atualizarEntitlement(), !config.compraDesbloqueada {
+                // App reinstalado / comprado em outro aparelho: reflete a posse localmente.
+                marcarCompra()
+            }
+        }
+    }
+
+    // Encerra a sessão ao sair (economia de bateria — spec seção 17).
+    func aoDesaparecer() { camera.parar() }
+
+    // MARK: - Modo, receita, lente
+
+    // Troca Modo Rua <-> Pro (fluxo 2 / épico 8.2). Transição imediata, mesmo viewfinder.
+    func trocarModo(_ novo: ModoCaptura) {
+        modo = novo
+        camera.definirModoPro(novo == .pro)
+        if novo == .rua { camera.retomarAutoContinuo() } // Rua volta ao auto contínuo
+    }
+
+    // Seleciona receita e persiste a escolha (critério 8.4).
+    func selecionarReceita(_ receita: Receita) {
+        receitaAtiva = receita
+        camera.definirReceitaAtiva(receita)
+        config.receitaAtivaID = receita.id
+        salvarConfig()
+    }
+
+    // Alterna para a próxima lente disponível (épico 8.3). Lembra a última usada.
+    func trocarLente() {
+        let lentes = camera.lentesDisponiveis.map { $0.id }
+        guard lentes.count > 1, let idx = lentes.firstIndex(of: camera.lenteAtual) else { return }
+        let proxima = lentes[(idx + 1) % lentes.count]
+        camera.trocarLente(para: proxima)
+        config.ultimaLenteUsada = proxima
+        salvarConfig()
+    }
+
+    // MARK: - Toque para travar foco/exposição (épico 8.1)
+
+    // `pontoView` em pontos da view; `pontoNormalizado` 0..1 no espaço da câmera.
+    func tocarPara(pontoNormalizado: CGPoint, pontoView: CGPoint) {
+        camera.travarFocoExposicao(pontoNormalizado: pontoNormalizado)
+        focoTravadoPontoView = pontoView
+        // O indicador aparece e some após ~1s (critério 8.1).
+        let ponto = pontoView
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) { [weak self] in
+            if self?.focoTravadoPontoView == ponto { self?.focoTravadoPontoView = nil }
+        }
+    }
+
+    // MARK: - Disparo + gate de paywall (regra 11.4) + salvar (épico 8.5)
+
+    // Captura o frame no instante do toque (preserva o momento), depois aplica o gate.
+    func disparar() {
+        capturando = true
+        camera.capturarFotoJPEG { [weak self] data in
+            guard let self else { return }
+            self.capturando = false
+            guard let data else { return }
+            if self.config.compraDesbloqueada {
+                self.salvarFoto(data)
+            } else {
+                // Regra 11.4: gate só no primeiro disparo. Guarda a foto e mostra o paywall.
+                self.fotoPendente = data
+                self.mostrandoPaywall = true
+            }
+        }
+    }
+
+    // Chamado quando a compra é confirmada no paywall (critério 8.7): destrava e salva a foto
+    // que motivou o paywall, sem exigir novo toque no disparador.
+    func compraConcluida() {
+        marcarCompra()
+        mostrandoPaywall = false
+        if let foto = fotoPendente { salvarFoto(foto) }
+    }
+
+    // Salva o JPEG na Fototeca; trata permissão negada mantendo a foto em memória (seção 9).
+    func salvarFoto(_ data: Data) {
+        Task {
+            let resultado = await PhotoLibrarySaver.salvar(data)
+            switch resultado {
+            case .salvo:
+                fotoPendente = nil
+            case .permissaoNegada, .falha:
+                fotoPendente = data
+                mostrandoAlertaFotos = true
+            }
+        }
+    }
+
+    // Tenta salvar de novo a foto pendente (botão do alerta — seção 9).
+    func tentarSalvarPendente() {
+        if let foto = fotoPendente { salvarFoto(foto) }
+    }
+
+    func descartarPendente() {
+        fotoPendente = nil
+        mostrandoAlertaFotos = false
+    }
+
+    // Status de fotos para decidir entre reabrir prompt ou mandar para Ajustes (seção 9).
+    var fotosNegadaPermanentemente: Bool {
+        let s = PhotoLibrarySaver.statusAtual()
+        return s == .denied || s == .restricted
+    }
+
+    // MARK: - Persistência
+
+    private func marcarCompra() {
+        config.compraDesbloqueada = true
+        if config.dataCompra == nil { config.dataCompra = Date() }
+        salvarConfig()
+    }
+
+    func salvarConfig() { try? context.save() }
+}

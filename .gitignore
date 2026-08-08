@@ -1,0 +1,13 @@
+# Xcode / build
+DerivedData/
+build/
+*.xcuserstate
+xcuserdata/
+.DS_Store
+
+# XcodeGen gera o .xcodeproj a partir do project.yml — não versionar o derivado.
+ISeeLife.xcodeproj/
+
+# Swift Package Manager
+.swiftpm/
+.build/

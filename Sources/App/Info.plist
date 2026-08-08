@@ -26,6 +26,10 @@
 	<string>AppIcon</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<!-- App não usa criptografia não-isenta (só HTTPS/StoreKit via frameworks da Apple).
+	     Evita a pergunta de export compliance a cada upload (bate com "None of the algorithms"). -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<!-- Localização: pt-BR base + en. A troca em tempo real é feita em runtime pelo
 	     LocalizationManager (épico 8.8), mas o app também declara os idiomas suportados. -->
 	<key>CFBundleLocalizations</key>

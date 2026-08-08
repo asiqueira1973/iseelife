@@ -37,7 +37,7 @@
 /* Paywall (screens 06/06b, epic 8.7) */
 "paywall_title" = "Unlock I See Life";
 "paywall_subtitle" = "One-time purchase, no subscription.";
-"paywall_feature_1" = "Unlimited capture with all 4 color recipes";
+"paywall_feature_1" = "Unlimited capture: neutral mode + 4 color recipes";
 "paywall_feature_2" = "Fast Street Mode and manual Pro Mode";
 "paywall_feature_3" = "JPEG ready instantly, straight to your Photos";
 "paywall_feature_4" = "100% offline, no account, no ads";

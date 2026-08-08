@@ -2,7 +2,7 @@
 # O .xcodeproj é derivado deste arquivo (mesmo padrão dos outros apps do Alexandre:
 # Quando Vence, Estante — spec seção 4/18). App "I See Life": câmera de fotografia
 # de rua, local-first, 100% offline (spec seção 0.5), duas experiências (Modo Rua /
-# Modo Pro) e 4 receitas de cor aplicadas em tempo real.
+# Modo Pro) e receitas de cor aplicadas em tempo real.
 #
 # Codinome técnico do target/pasta/bundle: "ISeeLife".
 name: ISeeLife
@@ -19,7 +19,7 @@ settings:
     DEVELOPMENT_TEAM: XGZW6Y6K25          # team de assinatura reaproveitado (spec 4)
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0.0"
-    CURRENT_PROJECT_VERSION: "1"
+    CURRENT_PROJECT_VERSION: "2"          # build 2: 1.0 puxado da revisão + Neutra + Control
     CODE_SIGN_STYLE: Automatic
     # #Predicate/consultas SwiftData geram warnings de concorrência (código da Apple);
     # mantém em minimal, mesmo racional dos outros apps.
@@ -37,6 +37,7 @@ targets:
       - path: Sources
         excludes:
           - "**/.DS_Store"
+          - "Controls"                    # a extensão de Control é target próprio (iOS 18)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dablab.iseelife
@@ -46,12 +47,39 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         TARGETED_DEVICE_FAMILY: "1"        # SOMENTE iPhone (spec 3/17)
         SUPPORTS_MACCATALYST: NO           # iOS-only (spec 3)
+    dependencies:
+      - target: ISeeLifeControls          # embute a extensão de Control no app
+        embed: true
+
+  # ---------------------------------------------------------------------------
+  # Extensão de Control (Central de Controle / Tela de Bloqueio) — WidgetKit.
+  # SOMENTE iOS 18+ (API ControlWidget). O app principal segue iOS 17; o Control
+  # só aparece para quem está no iOS 18+ (igual Moment/LUX). Feature aditiva.
+  # ---------------------------------------------------------------------------
+  ISeeLifeControls:
+    type: app-extension
+    platform: iOS
+    deploymentTarget:
+      iOS: "18.0"
+    sources:
+      - path: Sources/Controls
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dablab.iseelife.controls
+        INFOPLIST_FILE: Sources/Controls/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"   # ControlWidget exige iOS 18 (base do projeto é 17)
 
 schemes:
   ISeeLife:
     build:
       targets:
         ISeeLife: all
+        ISeeLifeControls: all
     run:
       config: Debug
       # StoreKit config local para testar o Paywall/compra em sandbox (spec 8.7/26).

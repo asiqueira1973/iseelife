@@ -62,14 +62,22 @@ no MVP. Cada campo alimenta o pipeline Core Image (regra 11.2/11.3).
 | `filtroMono` | `FiltroMono?` | Filtro colorido simulado (nenhum/amarelo/vermelho/verde); só com mono. |
 | `ordemExibicao` | Int | Ordem fixa no seletor; a de ordem 1 é o padrão neutro. |
 
-Valores de seed (tabela 11.2), em `Sources/Filtros/RecipeSeed.swift`:
+Valores de seed, em `Sources/Filtros/RecipeSeed.swift` (ordem 1 = Neutra/raw, padrão; as 4
+receitas de cor seguem a tabela 11.2, com Soft revisada — ver divergências):
 
-| Receita | hl | sh | sat | temp WB | tinta | grão | nitidez | mono |
-|---|---|---|---|---|---|---|---|---|
-| Classic | -1 | +1 | +2 | 7000K | 0 | fraco | +2 | não |
-| Soft | -2 | 0 | -2 | 2650K | -8 | nenhum | -1 | não |
-| Mono | -1 | +4 | 0 | nulo | -1 | forte | -2 | sim (vermelho) |
-| Positivo | -3 | +3 | +3 | 5000K | +3 | nenhum | 0 | não |
+| Ordem | Receita | hl | sh | sat | temp WB | tinta | grão | nitidez | mono |
+|---|---|---|---|---|---|---|---|---|---|
+| 1 | Neutra | 0 | 0 | 0 | nulo | 0 | nenhum | 0 | não |
+| 2 | Classic | -1 | +1 | +2 | 7000K | 0 | fraco | +2 | não |
+| 3 | Soft | -2 | 0 | -2 | 5600K | +1 | nenhum | -1 | não |
+| 4 | Mono | -1 | +4 | 0 | nulo | -1 | forte | -2 | sim (vermelho) |
+| 5 | Positivo | -3 | +3 | +3 | 5000K | +3 | nenhum | 0 | não |
+
+**"Neutra"** (enhancement pós-spec): todos os parâmetros neutros — o `RecipePipeline` faz
+early-return e devolve o frame do sensor intacto (raw do iPhone). É a receita de `ordem 1` e,
+portanto, o padrão neutro da regra 11.3. O `sincronizarCatalogo` faz upsert por `nomeExibicao`
+(identidade estável), então inserir a Neutra na frente não invalida `receitaAtivaID` nem
+embaralha as receitas existentes.
 
 ---
 
@@ -184,6 +192,25 @@ do sistema de localização.
 `StoreManager` (StoreKit 2): carrega o produto não-consumível `iseelife_desbloqueio_completo`,
 compra, verifica a transação, finaliza e expõe posse via entitlement. `restaurar()` faz
 `AppStore.sync()` e reconsulta. Preço vem do StoreKit (`displayPrice`), nunca hardcoded.
+
+### Extensão de Control (Central de Controle / Tela de Bloqueio) — iOS 18+
+Target separado **`ISeeLifeControls`** (WidgetKit `ControlWidget`), bundle
+`com.dablab.iseelife.controls`, embutido no app. Em `Sources/Controls/`:
+- `ShootControl.swift` — `ControlWidget` (botão) + `AbrirISeeLifeIntent` (`AppIntent` com
+  `openAppWhenRun = true`). Nome exibido "I See Life", ícone SF Symbol `eye` (coerente com o
+  ícone do app), tint âmbar.
+- `ISeeLifeControlBundle.swift` — `@main WidgetBundle`.
+- `Info.plist` — ponto de extensão `com.apple.widgetkit-extension`.
+
+**Como se comunica com o app:** não compartilha estado (sem App Group). O Control apenas **abre
+o app** (`openAppWhenRun`); como o app já abre no visor do Modo Rua por padrão
+(`modo_padrao = rua`, sem tela intermediária após o onboarding), o atalho entrega o "pronto para
+disparar" (princípio 0.1) sem tocar em nenhuma lógica existente (captura, receitas, paywall,
+modelo). É puramente aditivo.
+
+**Disponibilidade:** a partir do **iOS 18.0** (o target da extensão é iOS 18; o app principal
+segue iOS 17.0). Em iOS 17 o app funciona igual, só não expõe o Control — mesmo comportamento de
+Moment/LUX.
 
 ---
 

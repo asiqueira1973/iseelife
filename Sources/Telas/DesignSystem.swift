@@ -18,6 +18,7 @@ enum Estilo {
     static func swatch(_ receita: Receita) -> Color {
         if receita.monocromatico { return Color(white: 0.32) } // Mono -> cinza neutro
         switch receita.nomeExibicao {
+        case "Neutra":   return Color(white: 0.55) // raw -> cinza neutro claro
         case "Classic":  return Color(red: 0.30, green: 0.22, blue: 0.13) // âmbar quente
         case "Soft":     return Color(red: 0.20, green: 0.24, blue: 0.30) // azul frio
         case "Positivo": return Color(red: 0.18, green: 0.26, blue: 0.21) // verde dessaturado

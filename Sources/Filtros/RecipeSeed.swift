@@ -19,16 +19,18 @@ enum RecipeSeed {
 
     // Sincroniza o catálogo fixo (regra 11.2 / seção 7). `receita` é dado somente-leitura do
     // app, não do usuário — então SEMPRE reflete os valores canônicos do código. Faz upsert por
-    // `ordemExibicao`: insere o que falta e atualiza in-place o que existe (mantendo o `id`, para
-    // não invalidar `configuracao_usuario.receitaAtivaID`). Assim, ajuste de parâmetro de receita
-    // propaga na próxima abertura, mesmo em app já instalado.
+    // `nomeExibicao` (a identidade estável da receita): insere o que falta e atualiza in-place o
+    // que existe, mantendo o mesmo `id` — assim `configuracao_usuario.receitaAtivaID` continua
+    // válido mesmo quando a ORDEM muda (ex.: ao inserir "Neutra" na frente, "Classic" continua
+    // sendo o mesmo objeto, só muda a ordem_exibicao). Ajustes de receita propagam na próxima
+    // abertura, mesmo em app já instalado.
     static func sincronizarCatalogo(context: ModelContext) {
         let existentes = (try? context.fetch(FetchDescriptor<Receita>())) ?? []
-        let porOrdem = Dictionary(existentes.map { ($0.ordemExibicao, $0) }, uniquingKeysWith: { a, _ in a })
+        let porNome = Dictionary(existentes.map { ($0.nomeExibicao, $0) }, uniquingKeysWith: { a, _ in a })
 
         for canonica in receitasPadrao() {
-            if let atual = porOrdem[canonica.ordemExibicao] {
-                atual.nomeExibicao = canonica.nomeExibicao
+            if let atual = porNome[canonica.nomeExibicao] {
+                atual.ordemExibicao = canonica.ordemExibicao
                 atual.inspiracao = canonica.inspiracao
                 atual.highlight = canonica.highlight
                 atual.shadow = canonica.shadow
@@ -46,11 +48,28 @@ enum RecipeSeed {
         try? context.save()
     }
 
-    // Catálogo fixo — reflete a tabela 11.2 linha a linha.
+    // Catálogo fixo. Ordem 1 = "Neutra" (imagem crua do iPhone, padrão). As 4 receitas de cor
+    // seguem a tabela 11.2. Enhancement pós-spec pedido pelo Alexandre no device.
     static func receitasPadrao() -> [Receita] {
         [
-            // "Classic" — insp. Fuji Classic Chrome. É a receita de ordem 1: padrão neutro-relativo
-            // usado quando nenhuma receita foi escolhida (regra 11.3). WB "quente" => 7000K.
+            // "Neutra" — imagem crua, SEM receita. Todos os parâmetros neutros: o RecipePipeline
+            // passa o frame do sensor sem alteração. É a receita de ordem 1 (padrão neutro,
+            // regra 11.3) — agora, de fato, o raw do iPhone.
+            Receita(
+                nomeExibicao: "Neutra",
+                inspiracao: "Câmera do iPhone (sem receita)",
+                highlight: 0,
+                shadow: 0,
+                saturacao: 0,
+                temperaturaWbKelvin: nil,     // segue o WB do sensor, sem shift
+                tintaWb: 0,
+                intensidadeGrao: .nenhum,
+                nitidez: 0,
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 1
+            ),
+            // "Classic" — insp. Fuji Classic Chrome. WB "quente" => 7000K.
             Receita(
                 nomeExibicao: "Classic",
                 inspiracao: "Classic Chrome",
@@ -63,7 +82,7 @@ enum RecipeSeed {
                 nitidez: 2,
                 monocromatico: false,
                 filtroMono: nil,
-                ordemExibicao: 1
+                ordemExibicao: 2
             ),
             // "Soft" — insp. Astia/Soft. AJUSTE VISUAL (device, a pedido do Alexandre): o spec
             // dava WB 2650K + tint -8, que juntos deixavam a receita verde-teal — longe do
@@ -82,7 +101,7 @@ enum RecipeSeed {
                 nitidez: -1,
                 monocromatico: false,
                 filtroMono: nil,
-                ordemExibicao: 2
+                ordemExibicao: 3
             ),
             // "Mono" — insp. Acros + filtro vermelho. shadow "+3 a +4" -> +4 (extremo mais
             // "moody", casando com a inspiração "Moody Monochrome"). saturação "—" (N/A em mono).
@@ -98,7 +117,7 @@ enum RecipeSeed {
                 nitidez: -2,
                 monocromatico: true,
                 filtroMono: .vermelho,
-                ordemExibicao: 3
+                ordemExibicao: 4
             ),
             // "Positivo" — insp. Ricoh GR III Positive Film. highlight "-2 a -4" -> -3;
             // shadow "+2 a +4" -> +3 (pontos médios). WB "fria, correção de highlight ativa"
@@ -115,7 +134,7 @@ enum RecipeSeed {
                 nitidez: 0,
                 monocromatico: false,
                 filtroMono: nil,
-                ordemExibicao: 4
+                ordemExibicao: 5
             ),
         ]
     }

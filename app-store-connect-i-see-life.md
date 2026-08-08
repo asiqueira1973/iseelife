@@ -34,15 +34,15 @@ O I See Life é o primeiro app brasileiro feito para fotografia de rua.
 
 A ideia é simples: a foto sai pronta na hora. O visual é aplicado no momento do disparo e vira o arquivo final. Nada de passar horas editando depois. É a filosofia out-of-the-camera: você escolhe a receita, aponta e dispara.
 
-QUATRO RECEITAS COM CARÁTER
-Quatro visuais pré-configurados, aplicados ao vivo no visor e gravados direto no JPEG:
+RECEITAS COM CARÁTER
+Comece na Neutra (a imagem crua do iPhone, sem filtro) ou escolha um dos quatro visuais, aplicados ao vivo no visor e gravados direto no JPEG:
 - Classic: cores quentes, clima analógico
 - Soft: suave, contido, tons de pele bonitos
 - Mono: preto e branco contrastado
 - Positivo: verde e saturado, cara de slide de filme
 
 MODO RUA: UM TOQUE E ACABOU
-Abriu o app, já está pronto para fotografar. Sem menu no caminho até o clique. Toque na tela para travar o foco, dispare, e a foto vai direto para a sua Fototeca. Obturador silencioso por padrão.
+Abriu o app, já está pronto para fotografar. Sem menu no caminho até o clique. Toque na tela para travar o foco, dispare, e a foto vai direto para a sua Fototeca. Obturador silencioso por padrão. E, no iOS 18, adicione o atalho do I See Life à Central de Controle para abrir a câmera direto da tela de bloqueio.
 
 MODO PRO: CONTROLE TOTAL
 Quando quiser mandar na câmera: ISO, velocidade do obturador, exposição, foco e white balance na mão, com zebra e focus peaking para cravar a luz e o foco. E prioridade de obturador no Modo Rua: trave em 1/250, 1/500 ou 1/1000 e congele o movimento, sem foto tremida.

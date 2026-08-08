@@ -37,7 +37,7 @@
 /* Paywall (telas 06/06b, épico 8.7) */
 "paywall_title" = "Desbloqueie o I See Life";
 "paywall_subtitle" = "Compra única, sem assinatura.";
-"paywall_feature_1" = "Captura ilimitada com as 4 receitas de cor";
+"paywall_feature_1" = "Captura ilimitada: modo neutro + 4 receitas de cor";
 "paywall_feature_2" = "Modo Rua ágil e Modo Pro com controle manual";
 "paywall_feature_3" = "JPEG pronto na hora, direto na sua Fototeca";
 "paywall_feature_4" = "100% offline, sem conta e sem anúncios";

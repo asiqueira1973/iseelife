@@ -42,6 +42,12 @@ struct RecipeValues {
         self.filtroMono = filtroMono
     }
 
+    // true quando a receita não altera nada (todos os parâmetros neutros) — a "Neutra"/raw.
+    var ehNeutra: Bool {
+        highlight == 0 && shadow == 0 && saturacao == 0 && temperaturaWbKelvin == nil
+            && tintaWb == 0 && intensidadeGrao == .nenhum && nitidez == 0 && !monocromatico
+    }
+
     // Cópia a partir da entidade SwiftData (lida na main/contexto do modelo).
     init(from receita: Receita) {
         self.init(
@@ -69,6 +75,10 @@ struct RecipePipeline {
 
     // Aplica a receita à imagem. `forceMonochrome` desatura só para o preview P&B (não persiste).
     func apply(_ recipe: RecipeValues, to input: CIImage, forceMonochrome: Bool = false) -> CIImage {
+        // Receita "Neutra": imagem crua, sem nenhuma etapa (a menos que o preview P&B esteja
+        // forçando desaturação). Retorna o frame do sensor intacto.
+        if recipe.ehNeutra && !forceMonochrome { return input }
+
         var image = input
 
         image = applyWhiteBalance(recipe, to: image)          // regra 11.2 — temp/tinta WB

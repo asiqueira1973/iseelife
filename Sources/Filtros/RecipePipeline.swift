@@ -93,7 +93,9 @@ struct RecipePipeline {
         let f = CIFilter.temperatureAndTint()
         f.inputImage = image
         // neutral = ponto neutro assumido da fonte; targetNeutral = padrão daylight (6500,0).
-        f.neutral = CIVector(x: CGFloat(temp ?? 6500), y: CGFloat(tint) * 10.0) // tinta -9..9 -> ~-90..90
+        // Escala do tint reduzida para 4 após validação visual no device (Soft estava verde
+        // demais com ×10 — ajuste sancionado pela seção 23/DoD). tinta -9..9 -> ~-36..36.
+        f.neutral = CIVector(x: CGFloat(temp ?? 6500), y: CGFloat(tint) * 4.0)
         f.targetNeutral = CIVector(x: 6500, y: 0)
         return f.outputImage ?? image
     }

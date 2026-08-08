@@ -87,7 +87,9 @@ extension CameraSession {
                 device.focusPointOfInterest = ponto
                 if device.isFocusModeSupported(.autoFocus) { device.focusMode = .autoFocus }
             }
-            if device.isExposurePointOfInterestSupported {
+            // Sob prioridade de obturador (Rua), a exposição é governada pelo loop (obturador
+            // fixo + ISO auto) — não trocar para autoExpose aqui, senão o loop é quebrado.
+            if !shutterPriorityAtivo, device.isExposurePointOfInterestSupported {
                 device.exposurePointOfInterest = ponto
                 if device.isExposureModeSupported(.autoExpose) { device.exposureMode = .autoExpose }
             }

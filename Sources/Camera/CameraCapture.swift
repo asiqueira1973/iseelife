@@ -39,9 +39,23 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         renderer?.enfileirar(imagem)
     }
 
-    // Captura silenciosa: aplica a receita ao último frame cru e devolve o JPEG (épico 8.1).
-    // Não aplica o P&B de preview — só a receita persiste no arquivo (regra 11.3).
-    func capturarFotoJPEG(completion: @escaping (Data?) -> Void) {
+    // Ponto único de captura (épico 8.1 / regra 11.3). Escolhe o caminho conforme o toggle
+    // `obturador_silencioso`:
+    //  - silencioso ON  -> frame-grab do vídeo (silencioso, porém sujeito a motion blur em
+    //    pouca luz, pois usa o quadro do preview);
+    //  - silencioso OFF -> AVCapturePhotoOutput (nítido, com estabilização e fotografia
+    //    computacional da Apple; toca o som do obturador do sistema).
+    // Em ambos, a MESMA receita ativa é aplicada antes de gerar o JPEG final.
+    func capturarFotoJPEG(silencioso: Bool, completion: @escaping (Data?) -> Void) {
+        if silencioso {
+            capturarPorFrameGrab(completion: completion)
+        } else {
+            capturarPorPhotoOutput(completion: completion)
+        }
+    }
+
+    // Captura silenciosa a partir do último frame cru do vídeo.
+    private func capturarPorFrameGrab(completion: @escaping (Data?) -> Void) {
         videoQueue.async { [weak self] in
             guard let self else { completion(nil); return }
             self.frameLock.lock()
@@ -50,13 +64,59 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
             guard let raw else { DispatchQueue.main.async { completion(nil) }; return }
 
             let filtrada = self.pipeline.apply(self.receitaAtivaValores, to: raw)
-            let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
-            let data = self.ciContext.jpegRepresentation(
-                of: filtrada,
-                colorSpace: colorSpace,
-                options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: 0.92]
-            )
+            let data = self.codificarJPEG(filtrada)
             DispatchQueue.main.async { completion(data) }
         }
+    }
+
+    // Captura nítida via AVCapturePhotoOutput; a receita é aplicada no delegate.
+    private func capturarPorPhotoOutput(completion: @escaping (Data?) -> Void) {
+        let settings = AVCapturePhotoSettings()
+        settings.photoQualityPrioritization = .quality
+        let delegate = PhotoCaptureDelegate(pipeline: pipeline, receita: receitaAtivaValores,
+                                            codificar: { [weak self] img in self?.codificarJPEG(img) }) { [weak self] data in
+            self?.photoDelegate = nil
+            DispatchQueue.main.async { completion(data) }
+        }
+        photoDelegate = delegate
+        photoOutput.capturePhoto(with: settings, delegate: delegate)
+    }
+
+    // Codifica uma CIImage em JPEG sRGB (usado pelos dois caminhos).
+    func codificarJPEG(_ imagem: CIImage) -> Data? {
+        let colorSpace = CGColorSpace(name: CGColorSpace.sRGB) ?? CGColorSpaceCreateDeviceRGB()
+        return ciContext.jpegRepresentation(
+            of: imagem,
+            colorSpace: colorSpace,
+            options: [kCGImageDestinationLossyCompressionQuality as CIImageRepresentationOption: 0.92]
+        )
+    }
+}
+
+// Delegate da captura real (AVCapturePhotoOutput). Aplica a receita ativa (regra 11.3) sobre a
+// foto processada pela Apple e devolve o JPEG final.
+final class PhotoCaptureDelegate: NSObject, AVCapturePhotoCaptureDelegate {
+    private let pipeline: RecipePipeline
+    private let receita: RecipeValues
+    private let codificar: (CIImage) -> Data?
+    private let completion: (Data?) -> Void
+
+    init(pipeline: RecipePipeline, receita: RecipeValues,
+         codificar: @escaping (CIImage) -> Data?, completion: @escaping (Data?) -> Void) {
+        self.pipeline = pipeline
+        self.receita = receita
+        self.codificar = codificar
+        self.completion = completion
+    }
+
+    func photoOutput(_ output: AVCapturePhotoOutput,
+                     didFinishProcessingPhoto photo: AVCapturePhoto, error: Error?) {
+        // applyOrientationProperty baca a orientação EXIF na imagem (evita foto deitada).
+        guard error == nil, let dados = photo.fileDataRepresentation(),
+              let ci = CIImage(data: dados, options: [.applyOrientationProperty: true]) else {
+            completion(nil); return
+        }
+        let filtrada = pipeline.apply(receita, to: ci)
+        completion(codificar(filtrada))
     }
 }

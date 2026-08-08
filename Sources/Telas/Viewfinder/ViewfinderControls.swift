@@ -56,16 +56,45 @@ struct LensButton: View {
 }
 
 // Botão de disparo — círculo branco com anel (design telas 03/04). 44pt+ (acessibilidade 17).
+// Dispara no TOQUE (touch-down), não na soltura: pega o quadro antes do tranco do clique,
+// reduzindo o borrão de movimento e a perda de foco que aparecia ao apertar (feedback do device).
+// Ao disparar dá um "pop" visível no miolo + vibração firme, para você SENTIR que a foto saiu.
 struct ShutterButton: View {
     var aoDisparar: () -> Void
+    @State private var pressionado = false
+    @State private var pop = false
+    private let haptico = UIImpactFeedbackGenerator(style: .heavy)
 
     var body: some View {
-        Button(action: aoDisparar) {
-            ZStack {
-                Circle().stroke(Color.white, lineWidth: 4).frame(width: 78, height: 78)
-                Circle().fill(Color.white).frame(width: 64, height: 64)
-            }
+        ZStack {
+            Circle().stroke(Color.white, lineWidth: 4).frame(width: 78, height: 78)
+            Circle().fill(Color.white)
+                .frame(width: 64, height: 64)
+                .scaleEffect(pop ? 0.62 : (pressionado ? 0.9 : 1)) // recuo tipo obturador
         }
+        .contentShape(Circle())
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    guard !pressionado else { return }
+                    pressionado = true
+                    disparar()
+                }
+                .onEnded { _ in pressionado = false }
+        )
+        .animation(.spring(response: 0.18, dampingFraction: 0.5), value: pop)
+        .animation(.easeOut(duration: 0.1), value: pressionado)
+        .onAppear { haptico.prepare() }
         .accessibilityLabel(Text("shutter"))
+        .accessibilityAddTraits(.isButton)
+    }
+
+    private func disparar() {
+        haptico.impactOccurred(intensity: 1.0)   // vibração firme
+        // Pop do miolo (fecha e volta), para "sentir" a captura.
+        pop = true
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { pop = false }
+        // Captura no instante do toque, antes do movimento do clique.
+        aoDisparar()
     }
 }

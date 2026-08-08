@@ -10,9 +10,9 @@ struct SettingsView: View {
     @ObservedObject var store: StoreManager
     @ObservedObject var camera: CameraSession
     var aoAlterar: () -> Void
+    var aoFechar: () -> Void
 
     @ObservedObject private var loc = LocalizationManager.shared
-    @Environment(\.dismiss) private var dismiss
     @State private var restaurando = false
 
     var body: some View {
@@ -30,7 +30,7 @@ struct SettingsView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button(L("close")) { dismiss() }.foregroundStyle(Estilo.accent)
+                    Button(L("close")) { aoFechar() }.foregroundStyle(Estilo.accent)
                 }
             }
             .toolbarColorScheme(.dark, for: .navigationBar)
@@ -82,12 +82,38 @@ struct SettingsView: View {
         .listRowBackground(Estilo.painel)
     }
 
-    // CAPTURA — obturador silencioso.
+    // CAPTURA — obturador silencioso + piso de obturador do Rua (prioridade de obturador).
     private var secaoCaptura: some View {
-        Section(L("settings_capture")) {
+        Section {
             toggle(L("settings_silent"), isOn: $config.obturadorSilencioso)
+            VStack(alignment: .leading, spacing: 8) {
+                Text(L("settings_rua_shutter")).foregroundStyle(.white)
+                Picker("", selection: bindingObturadorRua) {
+                    Text("1/250").tag(250)
+                    Text("1/500").tag(500)
+                    Text("1/1000").tag(1000)
+                }
+                .pickerStyle(.segmented)
+                Text(L("settings_rua_shutter_hint"))
+                    .font(.system(size: 12)).foregroundStyle(Estilo.textoSecundario)
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text(L("settings_capture"))
         }
         .listRowBackground(Estilo.painel)
+    }
+
+    // Escreve o denominador e reaplica na câmera (prioridade de obturador do Rua).
+    private var bindingObturadorRua: Binding<Int> {
+        Binding(
+            get: { config.ruaObturadorDenominador ?? 250 },
+            set: { novo in
+                config.ruaObturadorDenominador = novo
+                aoAlterar()
+                camera.definirObturadorMinimoRua(denominador: novo)
+            }
+        )
     }
 
     // COMPRA — restaurar.

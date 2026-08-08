@@ -48,6 +48,11 @@ final class ConfiguracaoUsuario {
     // primeira receita (ordem_exibicao = 1) como padrão neutro (regra 11.3).
     var receitaAtivaID: UUID?
 
+    // Piso de velocidade do obturador no Modo Rua (prioridade de obturador — enhancement pós-spec
+    // pedido pelo Alexandre no device). Guarda o DENOMINADOR: 250 => 1/250s. Opcional para
+    // migração segura; nil => 250 (padrão). Opções na UI: 250, 500, 1000.
+    var ruaObturadorDenominador: Int?
+
     // cria a linha única com os defaults exatos da seção 7 / DBML.
     init(
         id: UUID = UUID(),
@@ -61,7 +66,8 @@ final class ConfiguracaoUsuario {
         compraDesbloqueada: Bool = false,
         dataCompra: Date? = nil,
         onboardingConcluido: Bool = false,
-        receitaAtivaID: UUID? = nil
+        receitaAtivaID: UUID? = nil,
+        ruaObturadorDenominador: Int? = nil
     ) {
         self.id = id
         self.idiomaPreferido = idiomaPreferido
@@ -75,5 +81,6 @@ final class ConfiguracaoUsuario {
         self.dataCompra = dataCompra
         self.onboardingConcluido = onboardingConcluido
         self.receitaAtivaID = receitaAtivaID
+        self.ruaObturadorDenominador = ruaObturadorDenominador
     }
 }

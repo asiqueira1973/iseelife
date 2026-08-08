@@ -17,12 +17,31 @@ import SwiftData
 
 enum RecipeSeed {
 
-    // Semeia as 4 receitas se ainda não existirem (regra 11.2 / seção 7).
-    static func seedIfNeeded(context: ModelContext) {
+    // Sincroniza o catálogo fixo (regra 11.2 / seção 7). `receita` é dado somente-leitura do
+    // app, não do usuário — então SEMPRE reflete os valores canônicos do código. Faz upsert por
+    // `ordemExibicao`: insere o que falta e atualiza in-place o que existe (mantendo o `id`, para
+    // não invalidar `configuracao_usuario.receitaAtivaID`). Assim, ajuste de parâmetro de receita
+    // propaga na próxima abertura, mesmo em app já instalado.
+    static func sincronizarCatalogo(context: ModelContext) {
         let existentes = (try? context.fetch(FetchDescriptor<Receita>())) ?? []
-        guard existentes.isEmpty else { return }
-        for receita in receitasPadrao() {
-            context.insert(receita)
+        let porOrdem = Dictionary(existentes.map { ($0.ordemExibicao, $0) }, uniquingKeysWith: { a, _ in a })
+
+        for canonica in receitasPadrao() {
+            if let atual = porOrdem[canonica.ordemExibicao] {
+                atual.nomeExibicao = canonica.nomeExibicao
+                atual.inspiracao = canonica.inspiracao
+                atual.highlight = canonica.highlight
+                atual.shadow = canonica.shadow
+                atual.saturacao = canonica.saturacao
+                atual.temperaturaWbKelvin = canonica.temperaturaWbKelvin
+                atual.tintaWb = canonica.tintaWb
+                atual.intensidadeGrao = canonica.intensidadeGrao
+                atual.nitidez = canonica.nitidez
+                atual.monocromatico = canonica.monocromatico
+                atual.filtroMono = canonica.filtroMono
+            } else {
+                context.insert(canonica)
+            }
         }
         try? context.save()
     }
@@ -46,15 +65,19 @@ enum RecipeSeed {
                 filtroMono: nil,
                 ordemExibicao: 1
             ),
-            // "Soft" — insp. Astia/Soft. WB "fria (~2650K)" é explícito no spec.
+            // "Soft" — insp. Astia/Soft. AJUSTE VISUAL (device, a pedido do Alexandre): o spec
+            // dava WB 2650K + tint -8, que juntos deixavam a receita verde-teal — longe do
+            // Astia real (suave, baixo contraste, saturação contida, pele levemente quente, sem
+            // dominante verde). Revisado para bater com a referência: WB neutra-suave e um sopro
+            // de magenta no lugar do verde. Registrado em DOCUMENTACAO-TECNICA.md (divergências).
             Receita(
                 nomeExibicao: "Soft",
                 inspiracao: "Astia/Soft",
                 highlight: -2,
                 shadow: 0,
                 saturacao: -2,
-                temperaturaWbKelvin: 2650,   // "fria (~2650K)" — explícito no spec
-                tintaWb: -8,
+                temperaturaWbKelvin: 5600,   // era 2650 (azul demais) -> neutra-suave
+                tintaWb: 1,                  // era -8 (verde) -> +1 sopro de magenta (pele)
                 intensidadeGrao: .nenhum,
                 nitidez: -1,
                 monocromatico: false,

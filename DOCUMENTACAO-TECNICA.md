@@ -189,19 +189,47 @@ compra, verifica a transação, finaliza e expõe posse via entitlement. `restau
 
 ## 6. Divergências em relação ao spec
 
-1. **Captura sempre silenciosa (frame-grab).** O iOS não tem API pública para mutar o som do
-   `AVCapturePhotoOutput`. Para garantir o obturador silencioso (default e princípio do
-   produto), a captura usa o último frame de vídeo em full-frame em vez do `AVCapturePhotoOutput`.
-   Consequência: a captura é sempre silenciosa; o toggle `obturador_silencioso` é persistido e
-   exibido, mas **não** alterna para um caminho audível de foto (não implementado no MVP). Também
-   implica resolução de captura = resolução do frame de vídeo sob preset `.photo` (alta, porém
-   não necessariamente a máxima do `AVCapturePhotoOutput`). Recomendo validar a resolução no
-   iPhone 13 mini antes do lançamento.
+1. **Captura híbrida silenciosa/nítida (obturador silencioso funcional).** O iOS não tem API
+   pública para mutar o som do `AVCapturePhotoOutput`, então a captura tem dois caminhos,
+   escolhidos pelo toggle `obturador_silencioso` (agora funcional, `CameraCapture.swift`):
+   - **ON (padrão):** frame-grab do último quadro de vídeo — silencioso; resolução = frame de
+     vídeo sob preset `.photo`.
+   - **OFF:** `AVCapturePhotoOutput` (`photoQualityPrioritization = .quality`) — nítido, com
+     estabilização e fotografia computacional da Apple; toca o som do obturador.
+   Em ambos, a mesma receita é aplicada antes do JPEG. O disparo acontece no **touch-down** do
+   botão (`ShutterButton`), pegando o quadro antes do tremor do clique — correção do motion blur
+   observado no device.
 
-2. **Dois campos de UI a mais na `configuracao_usuario`.** `onboardingConcluido` e
-   `receitaAtivaID` não estão no DBML original. Foram adicionados como estado de UI singleton
-   que precisa persistir entre sessões (não reabrir o onboarding — critério 8.6; lembrar a
-   receita ativa). Nenhuma relação nova foi criada.
+1b. **Prioridade de obturador no Modo Rua (enhancement pós-spec, pedido no device).** O spec
+   define o Rua como exposição totalmente automática; na validação com o Alexandre (fotógrafo de
+   rua), ficou claro que o auto às vezes escolhia obturador lento demais → motion blur. O Rua
+   agora usa **prioridade de obturador**: velocidade fixa (piso configurável) + ISO automático
+   via um loop amortecido a ~8Hz (`CameraSession.ajustarISOParaObturadorFixo`). Piso escolhido em
+   Configurações › Captura (1/250 padrão, 1/500, 1/1000), campo `ruaObturadorDenominador`. No Pro,
+   o loop é desligado e valem os controles manuais.
+
+1c. **Sem controle de abertura no Pro (limitação de hardware).** O iPhone tem abertura fixa
+   (f/1.6 wide / f/2.4 ultra-wide no 13 mini); não há íris mecânica nem API para variá-la. Por
+   isso o Pro expõe ISO, obturador, exposição, foco e WB — como o spec já previa —, sem abertura.
+
+2. **Dois campos de UI a mais na `configuracao_usuario`.** `onboardingConcluido`,
+   `receitaAtivaID` e `ruaObturadorDenominador` não estão no DBML original. Foram adicionados como
+   estado de UI/preferência singleton que persiste entre sessões (não reabrir o onboarding —
+   critério 8.6; lembrar a receita ativa; lembrar o piso de obturador do Rua). Campos opcionais,
+   migração aditiva segura. Nenhuma relação nova foi criada.
+
+2c. **Ajustes de UX do device.** Configurações acessíveis também no Modo Rua (engrenagem no topo);
+   painel do Pro com altura limitada + rolagem e alça "Ocultar controles" (cabe no 13 mini);
+   feedback de disparo (pop do botão + vibração + piscar do visor); catálogo de receitas
+   sincronizado a cada abertura (`sincronizarCatalogo`) para que ajustes de receita propaguem.
+
+2b. **Soft revisado por validação visual no device.** A tabela 11.2 dava Soft com WB 2650K +
+   tint -8, que na cadeia Core Image produzia uma dominante verde-teal — longe do Astia/Soft
+   real (suave, baixo contraste, saturação contida, pele levemente quente, sem verde). A pedido
+   do Alexandre e conforme o DoD (ajuste por comparação visual), Soft foi revisado para WB
+   **5600K** e tint **+1**. A escala global do tint na cadeia também caiu de ×10 para ×4 (o -8
+   original ficava agressivo demais). Seed em `RecipeSeed.swift`; o catálogo agora sincroniza a
+   cada abertura (`sincronizarCatalogo`), então ajustes futuros de receita propagam sozinhos.
 
 3. **Valores concretos onde o spec dá faixa/qualitativo (tabela 11.2).** O modelo exige números;
    onde o spec traz faixa ou termo qualitativo, escolhi um valor dentro da orientação e anotei:

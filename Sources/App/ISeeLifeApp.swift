@@ -18,6 +18,13 @@ struct ISeeLifeApp: App {
         } catch {
             fatalError("Falha ao criar o ModelContainer do SwiftData: \(error)")
         }
+        // Garante a config singleton e sincroniza o catálogo de receitas ANTES de qualquer view
+        // (regra 11.2 / seção 7). Feito no init para que ajustes de receita sempre reflitam.
+        let ctx = container.mainContext
+        let configs = (try? ctx.fetch(FetchDescriptor<ConfiguracaoUsuario>())) ?? []
+        if configs.isEmpty { ctx.insert(ConfiguracaoUsuario()) }
+        RecipeSeed.sincronizarCatalogo(context: ctx)
+        try? ctx.save()
     }
 
     var body: some Scene {

@@ -45,13 +45,9 @@ struct RootView: View {
         }
     }
 
-    // Cria a config singleton, semeia receitas e sincroniza idioma + permissão (seção 7).
+    // A config singleton e o catálogo de receitas já são garantidos no init do app.
+    // Aqui só aplica o idioma salvo e atualiza o status de permissão da câmera.
     private func bootstrap() {
-        if configs.isEmpty {
-            context.insert(ConfiguracaoUsuario())
-            try? context.save()
-        }
-        RecipeSeed.seedIfNeeded(context: context)
         if let config = configs.first {
             loc.aplicar(config.idiomaPreferido)
         }

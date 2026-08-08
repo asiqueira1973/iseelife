@@ -31,6 +31,8 @@
 "pro_peaking" = "Peaking";
 "pro_grid" = "Grid";
 "pro_level" = "Level";
+"pro_hide_controls" = "Hide controls";
+"pro_show_controls" = "Show controls";
 
 /* Paywall (screens 06/06b, epic 8.7) */
 "paywall_title" = "Unlock I See Life";
@@ -60,6 +62,8 @@
 "settings_bw_preview" = "B&W preview in Street Mode";
 "settings_capture" = "CAPTURE";
 "settings_silent" = "Silent shutter";
+"settings_rua_shutter" = "Minimum shutter (Street Mode)";
+"settings_rua_shutter_hint" = "Fixed speed in Street Mode, with auto ISO. Faster freezes motion (and raises ISO in the dark).";
 "settings_purchase" = "PURCHASE";
 "settings_restore" = "Restore purchase";
 "settings_version" = "version %@";

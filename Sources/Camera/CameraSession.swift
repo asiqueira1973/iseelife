@@ -53,12 +53,24 @@ final class CameraSession: NSObject, ObservableObject {
     // Aplica overlays de zebra/peaking só no Modo Pro.
     var modoProAtivo = false
 
+    // MARK: - Prioridade de obturador no Modo Rua (enhancement pós-spec)
+    // Mantém a velocidade do obturador fixa (piso escolhido pelo usuário) e deixa o ISO
+    // automático subir para compensar a luz — congela o movimento na rua. Ativo só no Rua.
+    var ruaShutterAlvoSegundos: Double = 1.0 / 250.0
+    var shutterPriorityAtivo = false
+    private var aeTimer: DispatchSourceTimer?
+
     // MARK: - AVFoundation
     private let session = AVCaptureSession()
     private let videoOutput = AVCaptureVideoDataOutput()
+    // Saída de foto REAL — usada na captura nítida (obturador silencioso OFF): estabilização
+    // óptica + fotografia computacional da Apple, sem o motion blur do frame-grab em pouca luz.
+    let photoOutput = AVCapturePhotoOutput()
     let videoQueue = DispatchQueue(label: "com.dablab.iseelife.video")
     var currentDevice: AVCaptureDevice?
     private var currentInput: AVCaptureDeviceInput?
+    // Mantém o delegate de foto vivo durante a captura assíncrona.
+    var photoDelegate: NSObject?
 
     // Dispositivo ativo (usado pelos controles manuais em ManualCameraControls).
     var dispositivoAtivo: AVCaptureDevice? { currentDevice }
@@ -102,18 +114,26 @@ final class CameraSession: NSObject, ObservableObject {
             videoOutput.setSampleBufferDelegate(self, queue: videoQueue)
             session.addOutput(videoOutput)
         }
+        if session.canAddOutput(photoOutput) {
+            session.addOutput(photoOutput)
+            photoOutput.maxPhotoQualityPrioritization = .quality
+        }
         session.commitConfiguration()
         aplicarOrientacaoRetrato()
 
         videoQueue.async { [weak self] in
-            self?.session.startRunning()
-            let rodando = self?.session.isRunning ?? false
-            DispatchQueue.main.async { self?.sessaoRodando = rodando }
+            guard let self else { return }
+            self.session.startRunning()
+            let rodando = self.session.isRunning
+            DispatchQueue.main.async { self.sessaoRodando = rodando }
+            // No Modo Rua, liga a prioridade de obturador assim que a sessão está rodando.
+            if rodando, !self.modoProAtivo { self.iniciarShutterPriority() }
         }
     }
 
     // Encerra a sessão (economia de bateria — spec seção 17: não fica ativa em segundo plano).
     func parar() {
+        pararShutterPriority()
         videoQueue.async { [weak self] in
             guard let self else { return }
             if self.session.isRunning { self.session.stopRunning() }
@@ -144,11 +164,14 @@ final class CameraSession: NSObject, ObservableObject {
         }
     }
 
-    // Orientação retrato (spec seção 17). iOS 17+: videoRotationAngle em graus.
+    // Orientação retrato (spec seção 17). iOS 17+: videoRotationAngle em graus. Aplica no
+    // preview (videoOutput) e na captura real (photoOutput).
     private func aplicarOrientacaoRetrato() {
-        guard let conn = videoOutput.connection(with: .video) else { return }
-        if #available(iOS 17.0, *), conn.isVideoRotationAngleSupported(90) {
-            conn.videoRotationAngle = 90
+        for conn in [videoOutput.connection(with: .video), photoOutput.connection(with: .video)] {
+            guard let conn else { continue }
+            if #available(iOS 17.0, *), conn.isVideoRotationAngleSupported(90) {
+                conn.videoRotationAngle = 90
+            }
         }
     }
 
@@ -160,5 +183,62 @@ final class CameraSession: NSObject, ObservableObject {
     }
 
     func definirPreviewPB(_ ativo: Bool) { previewPB = ativo }
-    func definirModoPro(_ ativo: Bool) { modoProAtivo = ativo }
+
+    // Alterna Rua/Pro: no Pro, para a prioridade de obturador e volta ao auto contínuo (base
+    // para os ajustes manuais); no Rua, (re)liga a prioridade de obturador.
+    func definirModoPro(_ ativo: Bool) {
+        modoProAtivo = ativo
+        if ativo {
+            pararShutterPriority()
+            retomarAutoContinuo()
+        } else {
+            iniciarShutterPriority()
+        }
+    }
+
+    // Define o piso de obturador do Rua (denominador: 250 => 1/250s) e reaplica se estiver no Rua.
+    func definirObturadorMinimoRua(denominador: Int) {
+        ruaShutterAlvoSegundos = 1.0 / Double(max(denominador, 1))
+        if !modoProAtivo { iniciarShutterPriority() }
+    }
+
+    // MARK: - Loop de prioridade de obturador (Rua)
+
+    // Liga o loop: fixa a duração do obturador e ajusta o ISO a ~8Hz para acompanhar a luz.
+    func iniciarShutterPriority() {
+        guard currentDevice != nil else { return }   // sessão ainda não configurada
+        shutterPriorityAtivo = true
+        aeTimer?.cancel()
+        let timer = DispatchSource.makeTimerSource(queue: videoQueue)
+        timer.schedule(deadline: .now() + 0.2, repeating: 0.125)
+        timer.setEventHandler { [weak self] in self?.ajustarISOParaObturadorFixo() }
+        aeTimer = timer
+        timer.resume()
+    }
+
+    func pararShutterPriority() {
+        shutterPriorityAtivo = false
+        aeTimer?.cancel()
+        aeTimer = nil
+    }
+
+    // Um passo do loop: mantém a duração fixa e move o ISO em direção à exposição correta
+    // (com amortecimento e banda morta para não tremular).
+    private func ajustarISOParaObturadorFixo() {
+        guard shutterPriorityAtivo, let device = currentDevice else { return }
+        let offset = device.exposureTargetOffset            // EV; + = mais claro que o alvo
+        guard abs(offset) > 0.08 else { return }             // banda morta
+        let isoAtualDev = device.iso
+        let alvoISO = isoAtualDev * pow(2, -offset)          // corrige a exposição via ISO
+        let suavizado = isoAtualDev + (alvoISO - isoAtualDev) * 0.4   // amortecimento
+        let fmt = device.activeFormat
+        let clamped = min(max(suavizado, fmt.minISO), fmt.maxISO)
+        let dur = CMTime(seconds: ruaShutterAlvoSegundos, preferredTimescale: 1_000_000)
+        do {
+            try device.lockForConfiguration()
+            device.setExposureModeCustom(duration: dur, iso: clamped)
+            device.unlockForConfiguration()
+        } catch { /* mantém o último estado válido */ }
+        DispatchQueue.main.async { self.isoAtual = clamped }
+    }
 }

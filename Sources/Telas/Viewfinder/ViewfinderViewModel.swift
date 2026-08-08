@@ -48,6 +48,8 @@ final class ViewfinderViewModel: ObservableObject {
     // Inicia a sessão na última lente usada (épico 8.3) e sincroniza posse do produto.
     func aoAparecer() {
         camera.atualizarStatusPermissao()
+        // Define o piso de obturador do Rua antes de iniciar (o loop liga quando a sessão sobe).
+        camera.ruaShutterAlvoSegundos = 1.0 / Double(ruaObturadorDenominador)
         camera.iniciar(lentePreferida: config.ultimaLenteUsada)
         camera.definirPreviewPB(config.previewPbAtivado)
         Task {
@@ -65,10 +67,18 @@ final class ViewfinderViewModel: ObservableObject {
     // MARK: - Modo, receita, lente
 
     // Troca Modo Rua <-> Pro (fluxo 2 / épico 8.2). Transição imediata, mesmo viewfinder.
+    // definirModoPro já cuida de ligar/desligar a prioridade de obturador do Rua.
     func trocarModo(_ novo: ModoCaptura) {
         modo = novo
         camera.definirModoPro(novo == .pro)
-        if novo == .rua { camera.retomarAutoContinuo() } // Rua volta ao auto contínuo
+    }
+
+    // Denominador do obturador mínimo do Rua (250/500/1000), com fallback 250.
+    var ruaObturadorDenominador: Int { config.ruaObturadorDenominador ?? 250 }
+
+    // Aplica o piso de obturador do Rua na câmera (chamado no início e ao trocar nas Configurações).
+    func aplicarObturadorMinimoRua() {
+        camera.definirObturadorMinimoRua(denominador: ruaObturadorDenominador)
     }
 
     // Seleciona receita e persiste a escolha (critério 8.4).
@@ -106,10 +116,13 @@ final class ViewfinderViewModel: ObservableObject {
 
     // Captura o frame no instante do toque (preserva o momento), depois aplica o gate.
     func disparar() {
+        // Pisca o obturador por ~120ms, independente do tempo de salvar (feedback visível).
         capturando = true
-        camera.capturarFotoJPEG { [weak self] data in
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in
+            self?.capturando = false
+        }
+        camera.capturarFotoJPEG(silencioso: config.obturadorSilencioso) { [weak self] data in
             guard let self else { return }
-            self.capturando = false
             guard let data else { return }
             if self.config.compraDesbloqueada {
                 self.salvarFoto(data)

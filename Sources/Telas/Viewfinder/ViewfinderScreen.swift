@@ -11,6 +11,8 @@ struct ViewfinderScreen: View {
     @StateObject private var vm: ViewfinderViewModel
     @ObservedObject var camera: CameraSession
     let config: ConfiguracaoUsuario
+    // Painel de controles do Pro recolhido? Permite ver o visor limpo sem sair do Modo Pro.
+    @State private var proRecolhido = false
 
     // Cria o ViewModel uma única vez (via @StateObject) a partir das dependências da raiz.
     init(camera: CameraSession, store: StoreManager, context: ModelContext,
@@ -44,13 +46,23 @@ struct ViewfinderScreen: View {
                     FocusLockIndicator(ponto: ponto)
                 }
 
-                // Flash breve de captura.
+                // Piscar de obturador: escurece o visor por um instante (leitura de "clic").
                 if vm.capturando {
-                    Color.white.opacity(0.85).ignoresSafeArea()
+                    Color.black.ignoresSafeArea()
                         .transition(.opacity)
                 }
 
-                conteudoControles
+                // Controles inferiores fixados na base (carrossel/Rua ou painel/Pro).
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
+                    controlesInferiores(geo: geo)
+                }
+                // Barra superior fixada no topo, SEMPRE por cima e acessível — assim o toggle
+                // RUA/PRO nunca é empurrado para fora por um painel alto (bug do 13 mini).
+                VStack(spacing: 0) {
+                    barraSuperior
+                    Spacer(minLength: 0)
+                }
             }
             .animation(.easeInOut(duration: 0.15), value: vm.capturando)
             .animation(.easeInOut(duration: 0.2), value: vm.modo)
@@ -76,7 +88,8 @@ struct ViewfinderScreen: View {
         // Configurações.
         .sheet(isPresented: $vm.mostrandoConfiguracoes) {
             SettingsView(config: config, store: vm.store, camera: camera,
-                         aoAlterar: { vm.salvarConfig() })
+                         aoAlterar: { vm.salvarConfig() },
+                         aoFechar: { vm.mostrandoConfiguracoes = false })
         }
         // Alerta de permissão de fotos negada (fluxo de exceção, seção 9).
         .alert(L("photos_alert_title"), isPresented: $vm.mostrandoAlertaFotos) {
@@ -91,35 +104,39 @@ struct ViewfinderScreen: View {
 
     // MARK: - Controles sobre o visor
 
-    private var conteudoControles: some View {
-        VStack(spacing: 0) {
-            // Barra superior: (Pro) atalho de configurações à esquerda, toggle de modo ao centro,
-            // lente à direita.
-            HStack {
-                if vm.modo == .pro {
-                    Button { vm.mostrandoConfiguracoes = true } label: {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 20)).foregroundStyle(.white).frame(width: 44, height: 44)
-                    }
-                } else {
-                    Color.clear.frame(width: 44, height: 44)
-                }
-                Spacer()
-                ModeToggle(modo: $vm.modo, aoTrocar: { vm.trocarModo($0) })
-                Spacer()
-                if camera.lentesDisponiveis.count > 1 {
-                    LensButton(lente: camera.lenteAtual) { vm.trocarLente() }
-                } else {
-                    Color.clear.frame(width: 44, height: 44) // 11.1: seletor oculto com 1 lente
-                }
+    // Barra superior: atalho de configurações à esquerda, toggle de modo ao centro, lente à
+    // direita. Fixada no topo — nunca é empurrada para fora por painel alto.
+    private var barraSuperior: some View {
+        HStack {
+            Button { vm.mostrandoConfiguracoes = true } label: {
+                Image(systemName: "gearshape")
+                    .font(.system(size: 20)).foregroundStyle(.white).frame(width: 44, height: 44)
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 8)
-
             Spacer()
+            ModeToggle(modo: $vm.modo, aoTrocar: { vm.trocarModo($0) })
+            Spacer()
+            if camera.lentesDisponiveis.count > 1 {
+                LensButton(lente: camera.lenteAtual) { vm.trocarLente() }
+            } else {
+                Color.clear.frame(width: 44, height: 44) // 11.1: seletor oculto com 1 lente
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 8)
+        .background(
+            // Leve gradiente para legibilidade da barra sobre o visor.
+            LinearGradient(colors: [.black.opacity(0.5), .clear],
+                           startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea(edges: .top)
+        )
+    }
 
-            // Base: Modo Rua = carrossel de receitas; Modo Pro = painel de sliders.
-            if vm.modo == .rua {
+    // Controles da base: Modo Rua = carrossel de receitas; Modo Pro = painel de sliders (com
+    // altura limitada e rolagem, para caber em telas pequenas como o 13 mini).
+    @ViewBuilder
+    private func controlesInferiores(geo: GeometryProxy) -> some View {
+        if vm.modo == .rua {
+            VStack(spacing: 0) {
                 RecipeCarousel(
                     receitas: vm.receitas, ativa: vm.receitaAtiva, camera: camera,
                     aoSelecionar: { vm.selecionarReceita($0) }
@@ -128,9 +145,32 @@ struct ViewfinderScreen: View {
                 .onLongPressGesture { vm.mostrandoSeletor = true } // abre o seletor expandido
                 ShutterButton { vm.disparar() }
                     .padding(.top, 18).padding(.bottom, 8)
-            } else {
-                ProControlsPanel(camera: camera, config: config, aoAlterarConfig: { vm.salvarConfig() })
-                    .padding(.horizontal, 12)
+            }
+        } else {
+            VStack(spacing: 6) {
+                // Alça para recolher/expandir o painel (poder ver o visor limpo no Pro).
+                Button { withAnimation(.easeInOut(duration: 0.2)) { proRecolhido.toggle() } } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: proRecolhido ? "slider.horizontal.3" : "chevron.down")
+                            .font(.system(size: 13, weight: .semibold))
+                        Text(proRecolhido ? L("pro_show_controls") : L("pro_hide_controls"))
+                            .font(.system(size: 13, weight: .semibold))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.vertical, 7).padding(.horizontal, 16)
+                    .background(Capsule().fill(Color.black.opacity(0.55)))
+                }
+
+                // Painel limitado a ~48% da altura; rola se não couber (evita empurrar a barra).
+                if !proRecolhido {
+                    ScrollView(.vertical, showsIndicators: false) {
+                        ProControlsPanel(camera: camera, config: config,
+                                         aoAlterarConfig: { vm.salvarConfig() })
+                            .padding(.horizontal, 12)
+                    }
+                    .frame(maxHeight: geo.size.height * 0.48)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
                 HStack {
                     // Receita ativa em miniatura + nome (design tela 04, canto inferior esquerdo).
                     HStack(spacing: 8) {

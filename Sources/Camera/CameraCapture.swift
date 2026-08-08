@@ -61,9 +61,24 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
             self.frameLock.lock()
             let raw = self.ultimoFrameCru
             self.frameLock.unlock()
-            guard let raw else { DispatchQueue.main.async { completion(nil) }; return }
 
-            let filtrada = self.pipeline.apply(self.receitaAtivaValores, to: raw)
+            let base: CIImage
+            if let raw {
+                base = raw
+            } else {
+                // No SIMULADOR não há câmera: usa um quadro neutro para o fluxo seguir (permite
+                // testar/capturar o paywall). Em DEVICE real sempre há frame — se não houver,
+                // não inventa imagem: aborta o disparo.
+                #if targetEnvironment(simulator)
+                base = CIImage(color: CIColor(red: 0.5, green: 0.5, blue: 0.5))
+                    .cropped(to: CGRect(x: 0, y: 0, width: 1170, height: 2532))
+                #else
+                DispatchQueue.main.async { completion(nil) }
+                return
+                #endif
+            }
+
+            let filtrada = self.pipeline.apply(self.receitaAtivaValores, to: base)
             let data = self.codificarJPEG(filtrada)
             DispatchQueue.main.async { completion(data) }
         }

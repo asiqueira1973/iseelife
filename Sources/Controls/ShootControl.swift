@@ -29,14 +29,4 @@ struct ShootControl: ControlWidget {
     }
 }
 
-// AppIntent do botão: abre o app (traz para o primeiro plano). Sem lógica extra — o roteamento
-// padrão do app já cai no visor do Modo Rua.
-struct AbrirISeeLifeIntent: AppIntent {
-    static var title: LocalizedStringResource = "Abrir o I See Life"
-    // Faz o toque no Control abrir o app.
-    static var openAppWhenRun: Bool = true
-
-    func perform() async throws -> some IntentResult {
-        .result()
-    }
-}
+// O AppIntent AbrirISeeLifeIntent está em Sources/Shared (compilado no app E na extensão).

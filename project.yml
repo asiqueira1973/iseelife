@@ -65,6 +65,9 @@ targets:
       - path: Sources/Controls
         excludes:
           - "**/.DS_Store"
+      - path: Sources/Shared           # AppIntent compartilhado com o app (openAppWhenRun)
+        excludes:
+          - "**/.DS_Store"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dablab.iseelife.controls

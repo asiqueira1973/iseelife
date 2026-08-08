@@ -65,5 +65,21 @@
 	<string>UIStatusBarStyleLightContent</string>
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
+	<!-- Quick Action da Tela de Início: segurar o ícone do app -> "Disparar" abre o app,
+	     que já cai no visor do Modo Rua (princípio 0.1). Funciona em qualquer iPhone (não
+	     depende de iOS 18 nem da Central de Controle). Ícone de sistema de captura de foto. -->
+	<key>UIApplicationShortcutItems</key>
+	<array>
+		<dict>
+			<key>UIApplicationShortcutItemType</key>
+			<string>com.dablab.iseelife.shortcut.disparar</string>
+			<key>UIApplicationShortcutItemTitle</key>
+			<string>Disparar</string>
+			<key>UIApplicationShortcutItemSubtitle</key>
+			<string>Modo Rua</string>
+			<key>UIApplicationShortcutItemIconType</key>
+			<string>UIApplicationShortcutIconTypeCapturePhoto</string>
+		</dict>
+	</array>
 </dict>
 </plist>

@@ -212,6 +212,14 @@ modelo). É puramente aditivo.
 segue iOS 17.0). Em iOS 17 o app funciona igual, só não expõe o Control — mesmo comportamento de
 Moment/LUX.
 
+### Quick Action da Tela de Início (segurar o ícone) — todos os iOS
+`Sources/App/Info.plist` → `UIApplicationShortcutItems`: um atalho estático **"Disparar /
+Modo Rua"** (ícone de sistema `UIApplicationShortcutIconTypeCapturePhoto`). Segurar o ícone do
+app na Home mostra o atalho; tocar abre o app, que já cai no visor do Modo Rua (princípio 0.1).
+É estático (sem código), funciona em **qualquer versão do iOS** e **não depende** da extensão de
+Control nem do iOS 18 — é o "atalho de segurar o ícone" que o usuário de fato usa (estilo Leica
+LUX). Não confundir com o Control da Central de Controle (abaixo), que é outra coisa.
+
 ### Disparo pelos botões de volume (hardware) — iOS 17.2+
 `Sources/Camera/HardwareShutter.swift` — `UIViewRepresentable` que adiciona um
 `AVCaptureEventInteraction` (AVKit, API oficial da Apple) ao visor. Os DOIS botões de volume

@@ -5,9 +5,13 @@
 
 import SwiftUI
 import SwiftData
+import UIKit
 
 @MainActor
 final class ViewfinderViewModel: ObservableObject {
+
+    // Feedback tátil do disparo — unificado para o botão da tela E os botões de volume.
+    private let haptico = UIImpactFeedbackGenerator(style: .heavy)
 
     let camera: CameraSession
     let store: StoreManager
@@ -41,6 +45,7 @@ final class ViewfinderViewModel: ObservableObject {
         camera.definirReceitaAtiva(receitaAtiva)
         camera.definirPreviewPB(config.previewPbAtivado)
         camera.definirModoPro(modo == .pro)
+        haptico.prepare()
     }
 
     // MARK: - Ciclo de vida
@@ -116,6 +121,8 @@ final class ViewfinderViewModel: ObservableObject {
 
     // Captura o frame no instante do toque (preserva o momento), depois aplica o gate.
     func disparar() {
+        // Feedback tátil firme (vale para o botão da tela e para os botões de volume).
+        haptico.impactOccurred(intensity: 1.0)
         // Pisca o obturador por ~120ms, independente do tempo de salvar (feedback visível).
         capturando = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { [weak self] in

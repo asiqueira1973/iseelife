@@ -37,6 +37,17 @@ struct ViewfinderScreen: View {
                         vm.tocarPara(pontoNormalizado: norm, pontoView: local)
                     }
 
+                // Disparo pelos botões de volume (hardware), iOS 17.2+. Não dispara enquanto
+                // um sheet/paywall está aberto.
+                if #available(iOS 17.2, *) {
+                    HardwareShutter {
+                        guard !vm.mostrandoPaywall, !vm.mostrandoConfiguracoes, !vm.mostrandoSeletor else { return }
+                        vm.disparar()
+                    }
+                    .allowsHitTesting(false)
+                    .frame(width: 1, height: 1)
+                }
+
                 // Sobreposições discretas (não contam como os 4 elementos de UI — seção 16).
                 if config.gridAtivado { GridOverlay().ignoresSafeArea() }
                 if config.nivelAtivado { LevelOverlay().ignoresSafeArea() }

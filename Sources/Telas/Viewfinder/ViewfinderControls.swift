@@ -63,7 +63,6 @@ struct ShutterButton: View {
     var aoDisparar: () -> Void
     @State private var pressionado = false
     @State private var pop = false
-    private let haptico = UIImpactFeedbackGenerator(style: .heavy)
 
     var body: some View {
         ZStack {
@@ -84,14 +83,13 @@ struct ShutterButton: View {
         )
         .animation(.spring(response: 0.18, dampingFraction: 0.5), value: pop)
         .animation(.easeOut(duration: 0.1), value: pressionado)
-        .onAppear { haptico.prepare() }
         .accessibilityLabel(Text("shutter"))
         .accessibilityAddTraits(.isButton)
     }
 
     private func disparar() {
-        haptico.impactOccurred(intensity: 1.0)   // vibração firme
-        // Pop do miolo (fecha e volta), para "sentir" a captura.
+        // Pop do miolo (fecha e volta), para "sentir" a captura. O haptic é disparado no
+        // ViewfinderViewModel.disparar() (unificado com os botões de volume).
         pop = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) { pop = false }
         // Captura no instante do toque, antes do movimento do clique.

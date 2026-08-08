@@ -212,6 +212,16 @@ modelo). É puramente aditivo.
 segue iOS 17.0). Em iOS 17 o app funciona igual, só não expõe o Control — mesmo comportamento de
 Moment/LUX.
 
+### Disparo pelos botões de volume (hardware) — iOS 17.2+
+`Sources/Camera/HardwareShutter.swift` — `UIViewRepresentable` que adiciona um
+`AVCaptureEventInteraction` (AVKit, API oficial da Apple) ao visor. Os DOIS botões de volume
+(handlers `primary` e `secondary`) chamam o mesmo `ViewfinderViewModel.disparar()` no fim do
+clique (`.phase == .ended`). Ativo só com a câmera em primeiro plano; ignorado enquanto um
+sheet/paywall está aberto. Botão físico elimina o tremor do toque na tela (complementa a captura
+no touch-down). O feedback tátil do disparo foi unificado em `disparar()` (vale para o botão da
+tela e para o volume). Disponível a partir do **iOS 17.2** (`@available`); em 17.0–17.1 o app
+funciona sem esse atalho.
+
 ---
 
 ## 6. Divergências em relação ao spec

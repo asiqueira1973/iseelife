@@ -52,6 +52,14 @@ enum RecipeSeed {
                 context.insert(canonica)
             }
         }
+
+        // Remove receitas FIXAS que saíram do catálogo (ex.: Retrô/Retrato/Dourada removidas na
+        // v1.1). Não mexe em receitas criadas pelo usuário (roadmap).
+        let nomesCanonicos = Set(receitasPadrao().map { $0.nomeExibicao })
+        for r in existentes where !r.criadaPeloUsuario && !nomesCanonicos.contains(r.nomeExibicao) {
+            context.delete(r)
+        }
+
         try? context.save()
     }
 
@@ -144,51 +152,9 @@ enum RecipeSeed {
                 ordemExibicao: 5
             ),
 
-            // ---- 4 receitas novas (v1.1) — inspiradas em filmes clássicos (Fuji X Weekly etc.).
-            // hl/sh/sat em MEIO-PASSO ×2. Referência interna em `inspiracao`, não exibida na UI.
+            // ---- Receita nova (v1.1) — só a Vívida foi aprovada visualmente no device; Retrô,
+            // Retrato e Dourada foram removidas. hl/sh/sat em MEIO-PASSO ×2.
 
-            // "Retrô" — insp. Reggie's Superia (Superia consumer, tons quentes desbotados, grão).
-            Receita(
-                nomeExibicao: "Retrô",
-                inspiracao: "Reggie's Superia",
-                highlight: -4,                // -2,0
-                shadow: -2,                   // -1,0
-                saturacao: 2,                 // +1,0
-                temperaturaWbKelvin: nil,     // Auto
-                tintaWb: 0,
-                intensidadeGrao: .forte,
-                nitidez: -2,
-                monocromatico: false,
-                filtroMono: nil,
-                ordemExibicao: 6,
-                ajusteVermelho: 1,
-                ajusteAzul: -3,
-                efeitoColorChrome: .forte,
-                efeitoColorChromeAzul: .forte,
-                clareza: 0,
-                tamanhoGrao: .grande
-            ),
-            // "Retrato" — insp. Kodak Portra 800 (pele bonita, baixa clareza, grão grande).
-            Receita(
-                nomeExibicao: "Retrato",
-                inspiracao: "Kodak Portra 800",
-                highlight: 2,                 // +1,0
-                shadow: 0,                    //  0
-                saturacao: 6,                 // +3,0
-                temperaturaWbKelvin: 5200,
-                tintaWb: 0,
-                intensidadeGrao: .forte,
-                nitidez: -2,
-                monocromatico: false,
-                filtroMono: nil,
-                ordemExibicao: 7,
-                ajusteVermelho: 1,
-                ajusteAzul: -5,
-                efeitoColorChrome: .forte,
-                efeitoColorChromeAzul: .fraco,
-                clareza: -4,
-                tamanhoGrao: .grande
-            ),
             // "Vívida" — insp. Kodachrome 64 (cores punchy, clareza alta, grão fino).
             Receita(
                 nomeExibicao: "Vívida",
@@ -202,33 +168,12 @@ enum RecipeSeed {
                 nitidez: 1,
                 monocromatico: false,
                 filtroMono: nil,
-                ordemExibicao: 8,
+                ordemExibicao: 6,
                 ajusteVermelho: 2,
                 ajusteAzul: -5,
                 efeitoColorChrome: .forte,
                 efeitoColorChromeAzul: .desligado,
                 clareza: 3,
-                tamanhoGrao: .pequeno
-            ),
-            // "Dourada" — insp. Kodak Gold 200 (dourado quente, baixa clareza, grão fino forte).
-            Receita(
-                nomeExibicao: "Dourada",
-                inspiracao: "Kodak Gold 200",
-                highlight: -3,                // -1,5
-                shadow: 1,                    // +0,5
-                saturacao: 6,                 // +3,0
-                temperaturaWbKelvin: 5500,    // Daylight
-                tintaWb: 0,
-                intensidadeGrao: .forte,
-                nitidez: -2,
-                monocromatico: false,
-                filtroMono: nil,
-                ordemExibicao: 9,
-                ajusteVermelho: 4,
-                ajusteAzul: -5,
-                efeitoColorChrome: .fraco,
-                efeitoColorChromeAzul: .desligado,
-                clareza: -2,
                 tamanhoGrao: .pequeno
             ),
         ]

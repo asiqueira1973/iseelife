@@ -85,15 +85,17 @@ são o enhancement v1.1 (inspiração em filmes clássicos, referência em `insp
 | 3 | Soft | -2 | 0 | -2 | 5600K | 0/0 | nenhum | -1 | 0 | –·– |
 | 4 | Mono | -1 | +4 | 0 | nulo | 0/0 | forte·peq | -2 | 0 | –·– |
 | 5 | Positivo | -3 | +3 | +3 | 5000K | 0/0 | nenhum | 0 | 0 | –·– |
-| 6 | Retrô | -2 | -1 | +1 | Auto | +1/-3 | forte·grande | -2 | 0 | forte·forte |
-| 7 | Retrato | +1 | 0 | +3 | 5200K | +1/-5 | forte·grande | -2 | -4 | forte·fraco |
-| 8 | Vívida | 0 | +0,5 | +2 | 5500K | +2/-5 | fraco·peq | +1 | +3 | forte·– |
-| 9 | Dourada | -1,5 | +0,5 | +3 | 5500K | +4/-5 | forte·peq | -2 | -2 | fraco·– |
+| 6 | Vívida | 0 | +0,5 | +2 | 5500K | +2/-5 | fraco·peq | +1 | +3 | forte·– |
+
+> **v1.1 — só a Vívida foi mantida.** As outras 3 receitas novas propostas (Retrô/Retrato/Dourada)
+> foram removidas após validação visual no device (só a Vívida convenceu). O `sincronizarCatalogo`
+> agora também **deleta** receitas fixas que saíram do catálogo (por `nomeExibicao`), respeitando
+> `criadaPeloUsuario`, então elas somem de quem já tinha instalado a versão de teste.
 
 **"Neutra"** (enhancement): todos os parâmetros neutros — o `RecipePipeline` faz early-return e
 devolve o frame do sensor intacto (raw). É a `ordem 1`, o padrão neutro da regra 11.3. O
 `sincronizarCatalogo` faz upsert por `nomeExibicao` (identidade estável) e copia TODOS os campos
-(inclusive os novos), então a v1.1 propaga os valores/receitas novas na 1ª abertura sem invalidar
+(inclusive os novos), então a v1.1 propaga os valores/receitas na 1ª abertura sem invalidar
 `receitaAtivaID` nem embaralhar as receitas existentes.
 
 **Novos estágios do pipeline (v1.1), aditivos** — só agem quando o campo ≠ neutro, então as 5

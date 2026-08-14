@@ -22,10 +22,7 @@ enum Estilo {
         case "Classic":  return Color(red: 0.30, green: 0.22, blue: 0.13) // âmbar quente
         case "Soft":     return Color(red: 0.20, green: 0.24, blue: 0.30) // azul frio
         case "Positivo": return Color(red: 0.18, green: 0.26, blue: 0.21) // verde dessaturado
-        case "Retrô":    return Color(red: 0.32, green: 0.26, blue: 0.16) // Superia quente/desbotado
-        case "Retrato":  return Color(red: 0.34, green: 0.23, blue: 0.19) // Portra pele quente
         case "Vívida":   return Color(red: 0.36, green: 0.17, blue: 0.14) // Kodachrome vermelho punchy
-        case "Dourada":  return Color(red: 0.36, green: 0.26, blue: 0.12) // Gold dourado
         default:         return Color(white: 0.25)
         }
     }

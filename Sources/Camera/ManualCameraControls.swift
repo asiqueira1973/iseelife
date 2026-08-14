@@ -119,18 +119,33 @@ extension CameraSession {
         }
     }
 
-    // "Restaurar valores" do Modo Pro (v1.1): volta tudo pro automático contínuo e, após
-    // estabilizar, lê os valores atuais do sensor de volta pros sliders.
+    // "Restaurar valores" do Modo Pro (v1.1): volta foco/exposição/WB pro automático contínuo,
+    // ZERA a compensação de exposição (EV) — senão o auto herdava o bias manual, causando o
+    // comportamento estranho — e re-mede a cena. Depois de estabilizar, reflete os valores auto
+    // nos sliders.
     func restaurarAutomatico() {
-        retomarAutoContinuo()
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+        configurar { device in
+            if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+            // Zera o EV antes de religar a exposição contínua (recalibra do zero).
+            let biasZero = min(max(0, device.minExposureTargetBias), device.maxExposureTargetBias)
+            device.setExposureTargetBias(biasZero)
+            if device.isExposureModeSupported(.continuousAutoExposure) {
+                device.exposureMode = .continuousAutoExposure
+            }
+        }
+        // Reflete a exposição já em 0 EV de imediato; lê ISO/obturador/foco/WB após estabilizar.
+        DispatchQueue.main.async { self.exposicaoEV = 0 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) { [weak self] in
             guard let self, let d = self.dispositivoAtivo else { return }
             self.isoAtual = min(max(d.iso, d.activeFormat.minISO), d.activeFormat.maxISO)
             self.duracaoObturadorAtual = CMTimeGetSeconds(d.exposureDuration)
             self.exposicaoEV = d.exposureTargetBias
             self.focoLensPosition = d.lensPosition
             let tt = d.temperatureAndTintValues(for: d.deviceWhiteBalanceGains)
-            self.wbTemperatura = tt.temperature
+            self.wbTemperatura = min(max(tt.temperature, 2500), 8000)
             self.wbTinta = tt.tint
         }
     }

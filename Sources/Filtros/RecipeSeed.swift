@@ -41,6 +41,13 @@ enum RecipeSeed {
                 atual.nitidez = canonica.nitidez
                 atual.monocromatico = canonica.monocromatico
                 atual.filtroMono = canonica.filtroMono
+                atual.ajusteVermelho = canonica.ajusteVermelho
+                atual.ajusteAzul = canonica.ajusteAzul
+                atual.efeitoColorChrome = canonica.efeitoColorChrome
+                atual.efeitoColorChromeAzul = canonica.efeitoColorChromeAzul
+                atual.clareza = canonica.clareza
+                atual.tamanhoGrao = canonica.tamanhoGrao
+                atual.criadaPeloUsuario = canonica.criadaPeloUsuario
             } else {
                 context.insert(canonica)
             }
@@ -73,9 +80,9 @@ enum RecipeSeed {
             Receita(
                 nomeExibicao: "Classic",
                 inspiracao: "Classic Chrome",
-                highlight: -1,
-                shadow: 1,
-                saturacao: 2,
+                highlight: -2,  // -1,0 em meio-passo ×2
+                shadow: 2,      // +1,0
+                saturacao: 4,   // +2,0
                 temperaturaWbKelvin: 7000,   // "quente" (qualitativo no spec) -> Kelvin alto
                 tintaWb: 0,
                 intensidadeGrao: .fraco,
@@ -92,9 +99,9 @@ enum RecipeSeed {
             Receita(
                 nomeExibicao: "Soft",
                 inspiracao: "Astia/Soft",
-                highlight: -2,
-                shadow: 0,
-                saturacao: -2,
+                highlight: -4,  // -2,0 em meio-passo ×2
+                shadow: 0,      //  0
+                saturacao: -4,  // -2,0
                 temperaturaWbKelvin: 5600,   // era 2650 (azul demais) -> neutra-suave
                 tintaWb: 1,                  // era -8 (verde) -> +1 sopro de magenta (pele)
                 intensidadeGrao: .nenhum,
@@ -108,8 +115,8 @@ enum RecipeSeed {
             Receita(
                 nomeExibicao: "Mono",
                 inspiracao: "Acros+R",
-                highlight: -1,
-                shadow: 4,                    // faixa +3 a +4 -> +4
+                highlight: -2,                // -1,0 em meio-passo ×2
+                shadow: 8,                    // +4,0 (faixa +3 a +4 -> +4)
                 saturacao: 0,                 // "—" no spec (irrelevante em monocromático)
                 temperaturaWbKelvin: nil,     // "neutro" -> segue sensor, sem shift
                 tintaWb: -1,
@@ -125,9 +132,9 @@ enum RecipeSeed {
             Receita(
                 nomeExibicao: "Positivo",
                 inspiracao: "Ricoh GR Positive Film",
-                highlight: -3,                // faixa -2 a -4 -> -3
-                shadow: 3,                    // faixa +2 a +4 -> +3
-                saturacao: 3,
+                highlight: -6,                // -3,0 em meio-passo ×2 (faixa -2 a -4 -> -3)
+                shadow: 6,                    // +3,0 (faixa +2 a +4 -> +3)
+                saturacao: 6,                 // +3,0
                 temperaturaWbKelvin: 5000,    // "fria" (qualitativo) -> Kelvin levemente baixo
                 tintaWb: 3,
                 intensidadeGrao: .nenhum,
@@ -135,6 +142,94 @@ enum RecipeSeed {
                 monocromatico: false,
                 filtroMono: nil,
                 ordemExibicao: 5
+            ),
+
+            // ---- 4 receitas novas (v1.1) — inspiradas em filmes clássicos (Fuji X Weekly etc.).
+            // hl/sh/sat em MEIO-PASSO ×2. Referência interna em `inspiracao`, não exibida na UI.
+
+            // "Retrô" — insp. Reggie's Superia (Superia consumer, tons quentes desbotados, grão).
+            Receita(
+                nomeExibicao: "Retrô",
+                inspiracao: "Reggie's Superia",
+                highlight: -4,                // -2,0
+                shadow: -2,                   // -1,0
+                saturacao: 2,                 // +1,0
+                temperaturaWbKelvin: nil,     // Auto
+                tintaWb: 0,
+                intensidadeGrao: .forte,
+                nitidez: -2,
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 6,
+                ajusteVermelho: 1,
+                ajusteAzul: -3,
+                efeitoColorChrome: .forte,
+                efeitoColorChromeAzul: .forte,
+                clareza: 0,
+                tamanhoGrao: .grande
+            ),
+            // "Retrato" — insp. Kodak Portra 800 (pele bonita, baixa clareza, grão grande).
+            Receita(
+                nomeExibicao: "Retrato",
+                inspiracao: "Kodak Portra 800",
+                highlight: 2,                 // +1,0
+                shadow: 0,                    //  0
+                saturacao: 6,                 // +3,0
+                temperaturaWbKelvin: 5200,
+                tintaWb: 0,
+                intensidadeGrao: .forte,
+                nitidez: -2,
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 7,
+                ajusteVermelho: 1,
+                ajusteAzul: -5,
+                efeitoColorChrome: .forte,
+                efeitoColorChromeAzul: .fraco,
+                clareza: -4,
+                tamanhoGrao: .grande
+            ),
+            // "Vívida" — insp. Kodachrome 64 (cores punchy, clareza alta, grão fino).
+            Receita(
+                nomeExibicao: "Vívida",
+                inspiracao: "Kodachrome 64",
+                highlight: 0,                 //  0
+                shadow: 1,                    // +0,5
+                saturacao: 4,                 // +2,0
+                temperaturaWbKelvin: 5500,    // Daylight
+                tintaWb: 0,
+                intensidadeGrao: .fraco,
+                nitidez: 1,
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 8,
+                ajusteVermelho: 2,
+                ajusteAzul: -5,
+                efeitoColorChrome: .forte,
+                efeitoColorChromeAzul: .desligado,
+                clareza: 3,
+                tamanhoGrao: .pequeno
+            ),
+            // "Dourada" — insp. Kodak Gold 200 (dourado quente, baixa clareza, grão fino forte).
+            Receita(
+                nomeExibicao: "Dourada",
+                inspiracao: "Kodak Gold 200",
+                highlight: -3,                // -1,5
+                shadow: 1,                    // +0,5
+                saturacao: 6,                 // +3,0
+                temperaturaWbKelvin: 5500,    // Daylight
+                tintaWb: 0,
+                intensidadeGrao: .forte,
+                nitidez: -2,
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 9,
+                ajusteVermelho: 4,
+                ajusteAzul: -5,
+                efeitoColorChrome: .fraco,
+                efeitoColorChromeAzul: .desligado,
+                clareza: -2,
+                tamanhoGrao: .pequeno
             ),
         ]
     }

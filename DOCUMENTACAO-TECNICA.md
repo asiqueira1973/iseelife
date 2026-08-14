@@ -51,33 +51,56 @@ no MVP. Cada campo alimenta o pipeline Core Image (regra 11.2/11.3).
 | `id` | UUID (pk) | Identificador. |
 | `nomeExibicao` | String | Rótulo na UI ("Classic", "Soft", "Mono", "Positivo"). |
 | `inspiracao` | String | Referência interna (não exibida como marca de terceiro). |
-| `highlight` | Int (-4…+4) | Curva de tom nas altas luzes. |
-| `shadow` | Int (-4…+4) | Curva de tom nas sombras. |
-| `saturacao` | Int (-4…+4) | Saturação; ignorada em receita monocromática. |
+| `highlight` | Int (meio-passo ×2) | Curva de tom nas altas luzes. Guardado ×2 (v1.1). |
+| `shadow` | Int (meio-passo ×2) | Curva de tom nas sombras. Guardado ×2. |
+| `saturacao` | Int (meio-passo ×2) | Saturação; ignorada em receita monocromática. Guardado ×2. |
 | `temperaturaWbKelvin` | Int? | Kelvin assumido da cena (dial de WB); nulo = segue o sensor. |
-| `tintaWb` | Int (-9…+9) | Eixo verde/magenta. |
-| `intensidadeGrao` | `IntensidadeGrao` | nenhum/fraco/medio/forte. |
+| `tintaWb` | Int (-9…+9) | Eixo **verde/magenta** (NÃO vermelho/azul). |
+| `intensidadeGrao` | `IntensidadeGrao` | Força do grão: nenhum/fraco/medio/forte. |
 | `nitidez` | Int (-4…+4) | Positivo = sharpen; negativo = leve desfoque. |
 | `monocromatico` | Bool | Remove toda a cor no preview e no JPEG. |
 | `filtroMono` | `FiltroMono?` | Filtro colorido simulado (nenhum/amarelo/vermelho/verde); só com mono. |
 | `ordemExibicao` | Int | Ordem fixa no seletor; a de ordem 1 é o padrão neutro. |
+| `ajusteVermelho` | Int (v1.1) | WB shift no eixo **vermelho** (modelo Fuji R/B); ganho no canal R. Default 0. |
+| `ajusteAzul` | Int (v1.1) | WB shift no eixo **azul**; ganho no canal B. Default 0. |
+| `efeitoColorChrome` | `EfeitoColorChrome` (v1.1) | Compressão de saturação nos tons saturados (eixo quente). |
+| `efeitoColorChromeAzul` | `EfeitoColorChrome` (v1.1) | Idem, eixo azul. |
+| `clareza` | Int -4…+4 (v1.1) | Contraste local (diferente de nitidez). |
+| `tamanhoGrao` | `TamanhoGrao` (v1.1) | Tamanho do grão: pequeno/grande. |
+| `criadaPeloUsuario` | Bool (v1.1) | false no catálogo fixo; prepara receitas customizadas (roadmap). |
 
-Valores de seed, em `Sources/Filtros/RecipeSeed.swift` (ordem 1 = Neutra/raw, padrão; as 4
-receitas de cor seguem a tabela 11.2, com Soft revisada — ver divergências):
+> **Meio-passo ×2 (v1.1):** para aceitar -1,5 / +0,5 sem trocar o tipo `Int` (o que quebraria a
+> migração SwiftData para quem já tem a v1 publicada), `highlight`/`shadow`/`saturacao` guardam o
+> valor **dobrado** (ex.: -1,5 → -3). O `RecipeValues` divide por 2. Os campos novos têm default
+> inline no `@Model`, então a migração da v1 → v1.1 é **aditiva e automática**.
 
-| Ordem | Receita | hl | sh | sat | temp WB | tinta | grão | nitidez | mono |
-|---|---|---|---|---|---|---|---|---|---|
-| 1 | Neutra | 0 | 0 | 0 | nulo | 0 | nenhum | 0 | não |
-| 2 | Classic | -1 | +1 | +2 | 7000K | 0 | fraco | +2 | não |
-| 3 | Soft | -2 | 0 | -2 | 5600K | +1 | nenhum | -1 | não |
-| 4 | Mono | -1 | +4 | 0 | nulo | -1 | forte | -2 | sim (vermelho) |
-| 5 | Positivo | -3 | +3 | +3 | 5000K | +3 | nenhum | 0 | não |
+Valores de seed (valor REAL; no store `hl/sh/sat` ficam ×2), em `Sources/Filtros/RecipeSeed.swift`.
+Ordem 1 = Neutra/raw (padrão). As 5 primeiras vêm da tabela 11.2 (Soft revisada); as 4 últimas
+são o enhancement v1.1 (inspiração em filmes clássicos, referência em `inspiracao`):
 
-**"Neutra"** (enhancement pós-spec): todos os parâmetros neutros — o `RecipePipeline` faz
-early-return e devolve o frame do sensor intacto (raw do iPhone). É a receita de `ordem 1` e,
-portanto, o padrão neutro da regra 11.3. O `sincronizarCatalogo` faz upsert por `nomeExibicao`
-(identidade estável), então inserir a Neutra na frente não invalida `receitaAtivaID` nem
-embaralha as receitas existentes.
+| Ordem | Receita | hl | sh | sat | temp WB | R/B | grão (força·tam) | nitidez | clareza | color chrome (Q·Az) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 1 | Neutra | 0 | 0 | 0 | nulo | 0/0 | nenhum | 0 | 0 | –·– |
+| 2 | Classic | -1 | +1 | +2 | 7000K | 0/0 | fraco·peq | +2 | 0 | –·– |
+| 3 | Soft | -2 | 0 | -2 | 5600K | 0/0 | nenhum | -1 | 0 | –·– |
+| 4 | Mono | -1 | +4 | 0 | nulo | 0/0 | forte·peq | -2 | 0 | –·– |
+| 5 | Positivo | -3 | +3 | +3 | 5000K | 0/0 | nenhum | 0 | 0 | –·– |
+| 6 | Retrô | -2 | -1 | +1 | Auto | +1/-3 | forte·grande | -2 | 0 | forte·forte |
+| 7 | Retrato | +1 | 0 | +3 | 5200K | +1/-5 | forte·grande | -2 | -4 | forte·fraco |
+| 8 | Vívida | 0 | +0,5 | +2 | 5500K | +2/-5 | fraco·peq | +1 | +3 | forte·– |
+| 9 | Dourada | -1,5 | +0,5 | +3 | 5500K | +4/-5 | forte·peq | -2 | -2 | fraco·– |
+
+**"Neutra"** (enhancement): todos os parâmetros neutros — o `RecipePipeline` faz early-return e
+devolve o frame do sensor intacto (raw). É a `ordem 1`, o padrão neutro da regra 11.3. O
+`sincronizarCatalogo` faz upsert por `nomeExibicao` (identidade estável) e copia TODOS os campos
+(inclusive os novos), então a v1.1 propaga os valores/receitas novas na 1ª abertura sem invalidar
+`receitaAtivaID` nem embaralhar as receitas existentes.
+
+**Novos estágios do pipeline (v1.1), aditivos** — só agem quando o campo ≠ neutro, então as 5
+receitas originais saem idênticas: `applyRedBlueShift` (ganho por canal R/B), `applyColorChrome`
+(compressão de saturação — **aproximação** global, Core Image não tem compressão por hue nativa),
+`applyClareza` (unsharp de raio grande = contraste local) e o grão passa a escalar o ruído quando
+`tamanhoGrao == .grande`.
 
 ---
 

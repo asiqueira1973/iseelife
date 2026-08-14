@@ -19,48 +19,50 @@ import Foundation
 // `receita` é um @Model e não deve ser lida fora da thread do seu contexto; o preview roda
 // numa fila de vídeo dedicada, então o pipeline trabalha sobre esta cópia imutável.
 struct RecipeValues {
-    let highlight: Int
-    let shadow: Int
-    let saturacao: Int
+    // highlight/shadow/saturacao já em valor REAL (Double) — convertido do Int ×2 do modelo.
+    let highlight: Double
+    let shadow: Double
+    let saturacao: Double
     let temperaturaWbKelvin: Int?
-    let tintaWb: Int
+    let tintaWb: Int                 // eixo verde/magenta
     let intensidadeGrao: IntensidadeGrao
     let nitidez: Int
     let monocromatico: Bool
     let filtroMono: FiltroMono?
-
-    init(highlight: Int, shadow: Int, saturacao: Int, temperaturaWbKelvin: Int?, tintaWb: Int,
-         intensidadeGrao: IntensidadeGrao, nitidez: Int, monocromatico: Bool, filtroMono: FiltroMono?) {
-        self.highlight = highlight
-        self.shadow = shadow
-        self.saturacao = saturacao
-        self.temperaturaWbKelvin = temperaturaWbKelvin
-        self.tintaWb = tintaWb
-        self.intensidadeGrao = intensidadeGrao
-        self.nitidez = nitidez
-        self.monocromatico = monocromatico
-        self.filtroMono = filtroMono
-    }
+    // Fidelidade (v1.1)
+    let ajusteVermelho: Int          // eixo vermelho/azul (WB shift Fuji)
+    let ajusteAzul: Int
+    let efeitoColorChrome: EfeitoColorChrome
+    let efeitoColorChromeAzul: EfeitoColorChrome
+    let clareza: Int                 // contraste local -4..+4
+    let tamanhoGrao: TamanhoGrao
 
     // true quando a receita não altera nada (todos os parâmetros neutros) — a "Neutra"/raw.
     var ehNeutra: Bool {
         highlight == 0 && shadow == 0 && saturacao == 0 && temperaturaWbKelvin == nil
             && tintaWb == 0 && intensidadeGrao == .nenhum && nitidez == 0 && !monocromatico
+            && ajusteVermelho == 0 && ajusteAzul == 0
+            && efeitoColorChrome == .desligado && efeitoColorChromeAzul == .desligado && clareza == 0
     }
 
-    // Cópia a partir da entidade SwiftData (lida na main/contexto do modelo).
+    // Cópia a partir da entidade SwiftData (lida na main/contexto do modelo). highlight/shadow/
+    // saturacao vêm em MEIO-PASSO ×2 no modelo -> divide por 2 para o valor real.
     init(from receita: Receita) {
-        self.init(
-            highlight: receita.highlight,
-            shadow: receita.shadow,
-            saturacao: receita.saturacao,
-            temperaturaWbKelvin: receita.temperaturaWbKelvin,
-            tintaWb: receita.tintaWb,
-            intensidadeGrao: receita.intensidadeGrao,
-            nitidez: receita.nitidez,
-            monocromatico: receita.monocromatico,
-            filtroMono: receita.filtroMono
-        )
+        self.highlight = Double(receita.highlight) / 2.0
+        self.shadow = Double(receita.shadow) / 2.0
+        self.saturacao = Double(receita.saturacao) / 2.0
+        self.temperaturaWbKelvin = receita.temperaturaWbKelvin
+        self.tintaWb = receita.tintaWb
+        self.intensidadeGrao = receita.intensidadeGrao
+        self.nitidez = receita.nitidez
+        self.monocromatico = receita.monocromatico
+        self.filtroMono = receita.filtroMono
+        self.ajusteVermelho = receita.ajusteVermelho
+        self.ajusteAzul = receita.ajusteAzul
+        self.efeitoColorChrome = receita.efeitoColorChrome
+        self.efeitoColorChromeAzul = receita.efeitoColorChromeAzul
+        self.clareza = receita.clareza
+        self.tamanhoGrao = receita.tamanhoGrao
     }
 }
 
@@ -81,14 +83,70 @@ struct RecipePipeline {
 
         var image = input
 
-        image = applyWhiteBalance(recipe, to: image)          // regra 11.2 — temp/tinta WB
+        image = applyWhiteBalance(recipe, to: image)          // regra 11.2 — temp/tinta (verde/magenta)
+        image = applyRedBlueShift(recipe, to: image)          // v1.1 — WB shift vermelho/azul
         image = applyToneCurve(recipe, to: image)             // regra 11.2 — highlight/shadow
         image = applyColor(recipe, to: image, forceMonochrome: forceMonochrome) // saturação/mono
+        image = applyColorChrome(recipe, to: image)           // v1.1 — compressão de saturados
+        image = applyClareza(recipe, to: image)               // v1.1 — contraste local
         image = applySharpness(recipe, to: image)             // regra 11.2 — nitidez
-        image = applyGrain(recipe, to: image)                 // regra 11.2 — grão procedural
+        image = applyGrain(recipe, to: image)                 // regra 11.2 + v1.1 — grão (força+tamanho)
 
         // Recorta ao extent original (blur/grão podem extrapolar as bordas).
         return image.cropped(to: input.extent)
+    }
+
+    // MARK: - WB shift vermelho/azul (modelo Fuji "Red & Blue") — v1.1
+
+    // Aplica ganho por canal: ajuste_vermelho move o canal R, ajuste_azul move o canal B.
+    // Eixo independente do tinta_wb (verde/magenta). Faixa típica -9..+9 -> ganho ~±0.18.
+    private func applyRedBlueShift(_ recipe: RecipeValues, to image: CIImage) -> CIImage {
+        guard recipe.ajusteVermelho != 0 || recipe.ajusteAzul != 0 else { return image }
+        let ganhoR = 1.0 + CGFloat(recipe.ajusteVermelho) / 9.0 * 0.18
+        let ganhoB = 1.0 + CGFloat(recipe.ajusteAzul) / 9.0 * 0.18
+        let f = CIFilter.colorMatrix()
+        f.inputImage = image
+        f.rVector = CIVector(x: ganhoR, y: 0, z: 0, w: 0)
+        f.gVector = CIVector(x: 0, y: 1, z: 0, w: 0)
+        f.bVector = CIVector(x: 0, y: 0, z: ganhoB, w: 0)
+        f.aVector = CIVector(x: 0, y: 0, z: 0, w: 1)
+        return f.outputImage ?? image
+    }
+
+    // MARK: - Color Chrome — compressão de saturação nos tons saturados — v1.1
+
+    // Aproximação (Core Image não tem compressão seletiva por hue nativa): reduz levemente a
+    // saturação geral proporcional à força dos dois eixos. Documentado como aproximação.
+    private func applyColorChrome(_ recipe: RecipeValues, to image: CIImage) -> CIImage {
+        func peso(_ e: EfeitoColorChrome) -> Double {
+            switch e { case .desligado: return 0; case .fraco: return 0.05; case .forte: return 0.11 }
+        }
+        let total = peso(recipe.efeitoColorChrome) + peso(recipe.efeitoColorChromeAzul) * 0.7
+        guard total > 0 else { return image }
+        let f = CIFilter.colorControls()
+        f.inputImage = image
+        f.saturation = Float(1.0 - total)   // comprime os saturados (aprox. global)
+        return f.outputImage ?? image
+    }
+
+    // MARK: - Clareza (contraste local) — v1.1
+
+    // clareza -4..+4. Positivo -> unsharp de raio grande (realça microcontraste/textura);
+    // negativo -> leve suavização de microcontraste. Diferente da nitidez (bordas finas).
+    private func applyClareza(_ recipe: RecipeValues, to image: CIImage) -> CIImage {
+        guard recipe.clareza != 0 else { return image }
+        if recipe.clareza > 0 {
+            let f = CIFilter.unsharpMask()
+            f.inputImage = image
+            f.radius = 12                                   // raio grande = contraste local
+            f.intensity = Float(Double(recipe.clareza) / 4.0 * 0.6)
+            return f.outputImage ?? image
+        } else {
+            let f = CIFilter.gaussianBlur()
+            f.inputImage = image
+            f.radius = Float(Double(-recipe.clareza) / 4.0 * 0.8)
+            return f.outputImage ?? image
+        }
     }
 
     // MARK: - White balance (temperatura + tinta) — regra 11.2
@@ -198,7 +256,13 @@ struct RecipePipeline {
         }
 
         // Ruído monocromático deslocado aleatoriamente para não "grudar" entre frames.
-        let noise = CIFilter.randomGenerator().outputImage ?? image
+        // tamanho_grao: pequeno = escala 1 (comportamento original, 5 receitas antigas idênticas);
+        // grande = ruído ampliado (~2,6×), deixando os grãos mais grossos.
+        let escalaGrao: CGFloat = recipe.tamanhoGrao == .grande ? 2.6 : 1.0
+        let noiseBase = CIFilter.randomGenerator().outputImage ?? image
+        let noise = escalaGrao == 1.0
+            ? noiseBase
+            : noiseBase.transformed(by: CGAffineTransform(scaleX: escalaGrao, y: escalaGrao))
         let dx = CGFloat.random(in: 0...512)
         let dy = CGFloat.random(in: 0...512)
         let shifted = noise.transformed(by: CGAffineTransform(translationX: dx, y: dy))

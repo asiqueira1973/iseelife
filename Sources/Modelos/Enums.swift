@@ -41,3 +41,19 @@ enum FiltroMono: String, Codable, CaseIterable {
     case vermelho
     case verde
 }
+
+// efeito_color_chrome — compressão de saturação em tons muito saturados (presente em quase toda
+// receita Fuji). Dois eixos: um "quente/vermelho" e um "azul" (efeito_color_chrome_azul).
+// Enhancement pós-spec (v1.1).
+enum EfeitoColorChrome: String, Codable, CaseIterable {
+    case desligado
+    case fraco
+    case forte
+}
+
+// tamanho_grao — segunda dimensão do grão, além da intensidade (receitas de referência
+// especificam os dois, ex.: "Strong Small", "Weak Large"). Enhancement pós-spec (v1.1).
+enum TamanhoGrao: String, Codable, CaseIterable {
+    case pequeno
+    case grande
+}

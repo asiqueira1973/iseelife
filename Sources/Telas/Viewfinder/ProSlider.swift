@@ -54,8 +54,11 @@ struct ProSlider: View {
             .frame(height: 24)
             .contentShape(Rectangle())
             .gesture(
-                DragGesture(minimumDistance: 0)
+                // minimumDistance > 0 e checagem de dominância horizontal: arrasto vertical passa
+                // pro ScrollView (não mexe no valor). Resolve o conflito scroll×slider (v1.1).
+                DragGesture(minimumDistance: 6)
                     .onChanged { g in
+                        guard abs(g.translation.width) >= abs(g.translation.height) else { return }
                         let novo = Double(min(max(g.location.x, 0), largura) / largura)
                         aoArrastar(novo)
                     }

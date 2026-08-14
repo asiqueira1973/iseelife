@@ -12,26 +12,22 @@ struct ZebraPeakingFilters {
     // Zebra stripes — marca em padrão diagonal qualquer área com luminância acima de 95%
     // (critério 8.2). Útil para identificar estouro de altas luzes.
     static func applyZebra(to image: CIImage) -> CIImage {
-        // Máscara: branco onde a luminância passa de 0,95; preto no resto.
-        let luma = CIFilter.colorMatrix()
-        luma.inputImage = image
-        let w = CIVector(x: 0.2126, y: 0.7152, z: 0.0722, w: 0)
-        luma.rVector = w; luma.gVector = w; luma.bVector = w
-        luma.aVector = CIVector(x: 0, y: 0, z: 0, w: 1)
-        guard let gray = luma.outputImage else { return image }
-
-        let threshold = CIFilter.colorClamp()
-        threshold.inputImage = gray
-        // Tudo abaixo de 0,95 vira 0; acima satura em 1 (clamp agressivo -> máscara binária).
-        threshold.minComponents = CIVector(x: 0.95, y: 0.95, z: 0.95, w: 0)
-        threshold.maxComponents = CIVector(x: 0.95, y: 0.95, z: 0.95, w: 1)
-        // Reescala 0.95..1.0 para 0..1 para virar máscara: usa um segundo passo de contraste.
-        let mask = (threshold.outputImage ?? gray)
-        let boosted = CIFilter.colorControls()
-        boosted.inputImage = mask
-        boosted.brightness = -0.95 * 20  // empurra o piso para 0
-        boosted.contrast = 20            // binariza
-        let finalMask = (boosted.outputImage ?? mask).cropped(to: image.extent)
+        // Máscara binária em UM passo: mask = clamp( luma*20 - 19 ) -> ~0 abaixo de 0,95, ~1
+        // perto de 1,0. (A versão antiga usava colorClamp que colapsava o frame inteiro em 0,95,
+        // clareando a tela toda — bug corrigido na v1.1.)
+        let f = CIFilter.colorMatrix()
+        f.inputImage = image
+        let k: CGFloat = 20
+        let v = CIVector(x: 0.2126 * k, y: 0.7152 * k, z: 0.0722 * k, w: 0)
+        f.rVector = v; f.gVector = v; f.bVector = v
+        f.aVector = CIVector(x: 0, y: 0, z: 0, w: 1)
+        f.biasVector = CIVector(x: -0.95 * k, y: -0.95 * k, z: -0.95 * k, w: 0)
+        guard let masked = f.outputImage else { return image }
+        let clamp = CIFilter.colorClamp()
+        clamp.inputImage = masked
+        clamp.minComponents = CIVector(x: 0, y: 0, z: 0, w: 0)
+        clamp.maxComponents = CIVector(x: 1, y: 1, z: 1, w: 1)
+        let finalMask = (clamp.outputImage ?? masked).cropped(to: image.extent)
 
         // Padrão de listras diagonais (45°).
         let stripes = CIFilter.stripesGenerator()

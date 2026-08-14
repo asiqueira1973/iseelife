@@ -31,6 +31,7 @@
 "pro_peaking" = "Peaking";
 "pro_grid" = "Grid";
 "pro_level" = "Nível";
+"pro_auto" = "Auto";
 "pro_hide_controls" = "Ocultar controles";
 "pro_show_controls" = "Mostrar controles";
 

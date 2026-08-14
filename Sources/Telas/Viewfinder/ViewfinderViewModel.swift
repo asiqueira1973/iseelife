@@ -92,6 +92,9 @@ final class ViewfinderViewModel: ObservableObject {
         camera.definirReceitaAtiva(receita)
         config.receitaAtivaID = receita.id
         salvarConfig()
+        // No Rua, trocar de receita dá um "refresh": foco/WB voltam pro automático, para não
+        // carregar ajustes manuais feitos no Pro (v1.1).
+        if modo == .rua { camera.resetarFocoWBContinuo() }
     }
 
     // Alterna para a próxima lente disponível (épico 8.3). Lembra a última usada.

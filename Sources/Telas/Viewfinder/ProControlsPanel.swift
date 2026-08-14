@@ -11,12 +11,16 @@ struct ProControlsPanel: View {
     @Bindable var config: ConfiguracaoUsuario
     var aoAlterarConfig: () -> Void
 
+    // Feature flag (v1.1): Zebra/Peaking escondidos até a zebra ser corrigida/calibrada (a
+    // implementação estava clareando a tela toda no device e parecia bug). Código mantido.
+    private let mostrarZebraPeaking = false
+
     // Faixas fixas de WB para o slider (o sensor aceita além, mas isto cobre o uso de rua).
     private let tempRange: ClosedRange<Float> = 2500...8000
     private let tintRange: ClosedRange<Float> = -100...100
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: 11) {
             togglesAssistencia
             sliderISO
             sliderObturador
@@ -25,7 +29,7 @@ struct ProControlsPanel: View {
             sliderWBTemp
             sliderWBTint
         }
-        .padding(18)
+        .padding(.horizontal, 18).padding(.vertical, 14)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(Color.black.opacity(0.80))
@@ -36,14 +40,33 @@ struct ProControlsPanel: View {
 
     private var togglesAssistencia: some View {
         HStack(spacing: 10) {
-            pill(L("pro_zebra"), ativo: camera.zebraAtivada) { camera.zebraAtivada.toggle() }
-            pill(L("pro_peaking"), ativo: camera.peakingAtivado) { camera.peakingAtivado.toggle() }
+            if mostrarZebraPeaking {
+                pill(L("pro_zebra"), ativo: camera.zebraAtivada) { camera.zebraAtivada.toggle() }
+                pill(L("pro_peaking"), ativo: camera.peakingAtivado) { camera.peakingAtivado.toggle() }
+            }
             pill(L("pro_grid"), ativo: config.gridAtivado) {
                 config.gridAtivado.toggle(); aoAlterarConfig()
             }
             pill(L("pro_level"), ativo: config.nivelAtivado) {
                 config.nivelAtivado.toggle(); aoAlterarConfig()
             }
+            Spacer(minLength: 0)
+            botaoAuto  // "Restaurar valores" -> volta pro automático (v1.1)
+        }
+    }
+
+    // Botão que restaura os controles do Pro para o automático da câmera.
+    private var botaoAuto: some View {
+        Button { camera.restaurarAutomatico() } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 12, weight: .semibold))
+                Text(L("pro_auto"))
+                    .font(.system(size: 14, weight: .semibold))
+            }
+            .foregroundStyle(.white)
+            .padding(.vertical, 8).padding(.horizontal, 14)
+            .background(Capsule().stroke(Color.white.opacity(0.25), lineWidth: 1.5))
         }
     }
 

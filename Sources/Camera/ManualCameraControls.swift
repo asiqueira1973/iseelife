@@ -96,7 +96,7 @@ extension CameraSession {
         }
     }
 
-    // Volta foco/exposição para contínuo (ao sair do estado travado ou trocar de modo).
+    // Volta foco/exposição/WB para contínuo (ao sair do estado travado ou trocar de modo).
     func retomarAutoContinuo() {
         configurar { device in
             if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
@@ -104,6 +104,34 @@ extension CameraSession {
             if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
                 device.whiteBalanceMode = .continuousAutoWhiteBalance
             }
+        }
+    }
+
+    // Volta SÓ foco e WB para contínuo, sem tocar na exposição (v1.1). Usado no Modo Rua, onde a
+    // exposição é governada pela prioridade de obturador — mas foco/WB manuais do Pro não devem
+    // "grudar" ao voltar pro Rua nem ao trocar de receita.
+    func resetarFocoWBContinuo() {
+        configurar { device in
+            if device.isFocusModeSupported(.continuousAutoFocus) { device.focusMode = .continuousAutoFocus }
+            if device.isWhiteBalanceModeSupported(.continuousAutoWhiteBalance) {
+                device.whiteBalanceMode = .continuousAutoWhiteBalance
+            }
+        }
+    }
+
+    // "Restaurar valores" do Modo Pro (v1.1): volta tudo pro automático contínuo e, após
+    // estabilizar, lê os valores atuais do sensor de volta pros sliders.
+    func restaurarAutomatico() {
+        retomarAutoContinuo()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in
+            guard let self, let d = self.dispositivoAtivo else { return }
+            self.isoAtual = min(max(d.iso, d.activeFormat.minISO), d.activeFormat.maxISO)
+            self.duracaoObturadorAtual = CMTimeGetSeconds(d.exposureDuration)
+            self.exposicaoEV = d.exposureTargetBias
+            self.focoLensPosition = d.lensPosition
+            let tt = d.temperatureAndTintValues(for: d.deviceWhiteBalanceGains)
+            self.wbTemperatura = tt.temperature
+            self.wbTinta = tt.tint
         }
     }
 

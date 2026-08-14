@@ -172,14 +172,16 @@ struct ViewfinderScreen: View {
                     .background(Capsule().fill(Color.black.opacity(0.55)))
                 }
 
-                // Painel limitado a ~48% da altura; rola se não couber (evita empurrar a barra).
+                // Painel limitado a ~62% da altura; com o spacing apertado costuma caber inteiro
+                // (sem rolar), o que também evita o conflito scroll×slider. Rola só se não couber.
                 if !proRecolhido {
-                    ScrollView(.vertical, showsIndicators: false) {
+                    ScrollView(.vertical, showsIndicators: true) {
                         ProControlsPanel(camera: camera, config: config,
                                          aoAlterarConfig: { vm.salvarConfig() })
                             .padding(.horizontal, 12)
                     }
-                    .frame(maxHeight: geo.size.height * 0.48)
+                    .frame(maxHeight: geo.size.height * 0.62)
+                    .scrollBounceBehavior(.basedOnSize)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
                 HStack {

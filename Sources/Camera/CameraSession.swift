@@ -192,6 +192,9 @@ final class CameraSession: NSObject, ObservableObject {
             pararShutterPriority()
             retomarAutoContinuo()
         } else {
+            // Entrando no Rua: reseta foco/WB manuais do Pro pro automático (não deixa "grudar"),
+            // e reestabelece a prioridade de obturador (exposição).
+            resetarFocoWBContinuo()
             iniciarShutterPriority()
         }
     }

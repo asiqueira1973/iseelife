@@ -1,9 +1,15 @@
-# Spec — App de Fotografia de Rua iOS (nome a definir)
+# Spec — I See Life (app de fotografia de rua iOS)
 
-**Versão:** 1.0
+**Versão:** 1.0 (spec original) · ver seção 30 para o estado atual
 **Responsável de produto:** Alexandre Siqueira
-**Status:** rascunho
-**Data:** 2026-08-07
+**Status:** implementado e publicado — ver seção 30
+**Data:** 2026-08-07 (spec original)
+
+> ⚠️ **LEIA ANTES DE MANTER O APP:** as seções **0–29 descrevem o escopo ORIGINAL da v1.0**.
+> O app **evoluiu** desde então (nome definido, receitas a mais, novas features, mudanças de
+> modelo). O **estado atual, o changelog e os mecanismos que NÃO podem ser quebrados** estão na
+> **seção 30** deste documento e, com detalhe técnico, em **`DOCUMENTACAO-TECNICA.md`**. Para
+> mudar o app com segurança: leia a seção 30 + a doc técnica, e siga o protocolo da seção 29.
 
 ## Como usar este documento
 
@@ -444,6 +450,60 @@ Não altere: [lista do que deve ficar intocado].
 Antes de codar, monte um plano e a lista de arquivos que serão criados/alterados, e aguarde minha aprovação.
 Ao final, atualize o DOCUMENTACAO-TECNICA.md refletindo a mudança.
 ```
+
+---
+
+## 30. Estado atual e changelog (atualizar a cada mudança)
+
+Esta seção reflete o que o app **realmente é hoje**, sobre o escopo original das seções 0–29.
+O detalhamento técnico (onde cada coisa vive no código, divergências, migrações) está em
+**`DOCUMENTACAO-TECNICA.md`** — é a fonte de verdade técnica. Aqui fica o resumo de produto +
+os pontos que **não podem ser quebrados** numa manutenção futura.
+
+**Nome:** definido como **I See Life** (era aberto na seção 25). Ícone e accent âmbar `#FFB000`.
+
+### Mecanismos que NÃO podem ser quebrados (armadilhas de manutenção)
+1. **Receitas `hl/sh/sat` são guardadas em MEIO-PASSO ×2** (o valor no store é o dobro do real;
+   ex.: -1,5 → -3). O `RecipeValues` divide por 2. Editar um valor de receita sem saber disso
+   dobra/divide o efeito. (v1.1)
+2. **`RecipeSeed.sincronizarCatalogo` roda a cada abertura**: faz upsert das receitas por
+   `nomeExibicao` E **deleta** receitas fixas que saíram do código. Não dá pra adicionar/editar
+   receita só no banco — tem que ser no código (senão é sobrescrita/apagada). Preserva
+   `criadaPeloUsuario`.
+3. **Migração SwiftData é aditiva**: campos novos em `receita`/`configuracao_usuario` precisam de
+   **default inline no `@Model`** (enum: valor totalmente qualificado). **Não** trocar o tipo de
+   um campo existente (ex.: Int→Double) sem plano de migração — quebra o launch de quem atualiza.
+4. **Captura é frame-grab silencioso por padrão** (não `AVCapturePhotoOutput`); o disparo é no
+   **touch-down** do botão. `AVCapturePhotoOutput` só quando `obturador_silencioso` = OFF.
+5. **Modo Rua usa prioridade de obturador** (obturador fixo + ISO auto, loop em `CameraSession`),
+   não exposição totalmente automática como dizia a seção 3 original.
+6. **O projeto Xcode é gerado por XcodeGen** (`project.yml` é a fonte; o `.xcodeproj` é derivado e
+   gitignorado). Rodar `xcodegen generate` após mexer em `project.yml`.
+
+### v1.0 — publicado (build em revisão/aprovação): deltas sobre o escopo original
+- **Receita "Neutra"** adicionada como ordem 1 e **padrão** (imagem crua do iPhone, sem filtro).
+  São **5 receitas** na v1.0 (Neutra + as 4 da seção 11.2, com **Soft revisada** — WB 5600K/tint
+  +1, não 2650K/-8, após validação visual).
+- **Disparo pelos botões de volume** (`AVCaptureEventInteraction`, iOS 17.2+).
+- **Quick Action da Tela de Início** (segurar o ícone → "Disparar").
+- **Extensão de Control iOS 18** (Tela de Bloqueio/Central de Controle): embutida, mas com **bug
+  conhecido — não registra**; deixada no build, a corrigir com target nativo do Xcode.
+- **Prioridade de obturador no Rua** (piso 1/250·1/500·1/1000 em Configurações).
+- **Feedback de disparo** (pop + haptic + piscar) e captura híbrida silencioso/nítido.
+
+### v1.1 — pronto no repo, ainda NÃO publicado (sobe depois da v1 aprovar)
+- **Receita "Vívida"** adicionada (ordem 6) → **6 receitas**. (Retrô/Retrato/Dourada foram
+  prototipadas e removidas por não convencerem visualmente.)
+- **Campos de fidelidade** em `receita`: `ajuste_vermelho`/`ajuste_azul` (WB shift Fuji R/B,
+  eixo separado do `tinta_wb` que é verde/magenta), `efeito_color_chrome`(+`_azul`), `clareza`,
+  `tamanho_grao`, `criada_pelo_usuario`; `hl/sh/sat` com meio-passo (ver armadilha 1).
+- **Modo Pro:** botão **"Auto"** (recalibra pro automático, zera EV), **refresh** de foco/WB ao
+  trocar de receita no Rua, painel que cabe os 6 sliders, e slider que não conflita com o scroll.
+- **Zebra/Peaking escondidos** atrás de flag (`mostrarZebraPeaking = false`) até calibrar.
+
+### Backlog (futuro, não crítico)
+- App Shortcut "Disparar" (AppShortcutsProvider). · Control nativo da Tela de Bloqueio (target
+  Xcode nativo). · Calibrar/reativar Zebra/Peaking. · Itens do roadmap seção 28.
 
 ---
 

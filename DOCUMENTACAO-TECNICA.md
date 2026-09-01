@@ -147,7 +147,12 @@ implementada:
 
 ### 11.4 — Paywall
 - Todas as telas/modos são navegáveis sem compra — nenhuma tela chama gate exceto o disparo.
-- Gate no primeiro disparo: `ViewfinderViewModel.disparar()` — se `compraDesbloqueada == false`,
+- **Cota grátis (v1.1, `fotosGratisUsadas`):** as primeiras **10 fotos** são salvas de graça
+  (`ViewfinderViewModel.quotaGratis = 10`); cada foto grátis incrementa `config.fotosGratisUsadas`.
+  Assim o app é totalmente usável sem compra e sem login ("experimente antes de comprar" — e o
+  revisor de loja acessa tudo). Um indicador discreto ("N fotos grátis") aparece no Modo Rua antes
+  da compra. Paridade com o Android.
+- Gate após a cota: `ViewfinderViewModel.disparar()` — se não comprado E `fotosGratisUsadas >= 10`,
   captura o frame para memória (`fotoPendente`) e apresenta o paywall; não salva ainda.
 - Após compra confirmada: `ViewfinderViewModel.compraConcluida()` marca
   `compraDesbloqueada`/`dataCompra` e salva a `fotoPendente` sem novo toque.

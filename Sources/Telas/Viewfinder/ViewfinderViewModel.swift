@@ -120,6 +120,12 @@ final class ViewfinderViewModel: ObservableObject {
         }
     }
 
+    // Cota de fotos grátis antes do paywall (regra 11.4). Paridade com o Android.
+    static let quotaGratis = 10
+
+    // Fotos grátis restantes (para o indicador do visor).
+    var gratisRestantes: Int { max(0, Self.quotaGratis - config.fotosGratisUsadas) }
+
     // MARK: - Disparo + gate de paywall (regra 11.4) + salvar (épico 8.5)
 
     // Captura o frame no instante do toque (preserva o momento), depois aplica o gate.
@@ -136,8 +142,14 @@ final class ViewfinderViewModel: ObservableObject {
             guard let data else { return }
             if self.config.compraDesbloqueada {
                 self.salvarFoto(data)
+            } else if self.config.fotosGratisUsadas < Self.quotaGratis {
+                // Cota grátis (regra 11.4): salva de graça e consome uma. Assim o app é totalmente
+                // usável sem compra e sem login (paridade com o Android).
+                self.config.fotosGratisUsadas += 1
+                self.salvarConfig()
+                self.salvarFoto(data)
             } else {
-                // Regra 11.4: gate só no primeiro disparo. Guarda a foto e mostra o paywall.
+                // Cota esgotada: guarda a foto e mostra o paywall.
                 self.fotoPendente = data
                 self.mostrandoPaywall = true
             }

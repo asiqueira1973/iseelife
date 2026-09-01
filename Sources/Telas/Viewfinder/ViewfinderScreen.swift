@@ -154,8 +154,15 @@ struct ViewfinderScreen: View {
                 )
                 .padding(.horizontal, 12)
                 .onLongPressGesture { vm.mostrandoSeletor = true } // abre o seletor expandido
+                // Indicador discreto de fotos grátis restantes (só antes da compra) — regra 11.4.
+                if !config.compraDesbloqueada {
+                    Text(L("gratis_restantes", vm.gratisRestantes))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.top, 10)
+                }
                 ShutterButton { vm.disparar() }
-                    .padding(.top, 18).padding(.bottom, 8)
+                    .padding(.top, config.compraDesbloqueada ? 18 : 8).padding(.bottom, 8)
             }
         } else {
             VStack(spacing: 6) {

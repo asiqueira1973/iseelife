@@ -53,6 +53,11 @@ final class ConfiguracaoUsuario {
     // migração segura; nil => 250 (padrão). Opções na UI: 250, 500, 1000.
     var ruaObturadorDenominador: Int?
 
+    // fotos_gratis_usadas — cota grátis (regra 11.4): número de fotos salvas de graça antes do
+    // paywall. Deixa o app totalmente usável sem compra ("experimente antes de comprar") e sem
+    // login. Default inline (0) para migração SwiftData aditiva e automática. Paridade com o Android.
+    var fotosGratisUsadas: Int = 0
+
     // cria a linha única com os defaults exatos da seção 7 / DBML.
     init(
         id: UUID = UUID(),
@@ -67,7 +72,8 @@ final class ConfiguracaoUsuario {
         dataCompra: Date? = nil,
         onboardingConcluido: Bool = false,
         receitaAtivaID: UUID? = nil,
-        ruaObturadorDenominador: Int? = nil
+        ruaObturadorDenominador: Int? = nil,
+        fotosGratisUsadas: Int = 0
     ) {
         self.id = id
         self.idiomaPreferido = idiomaPreferido
@@ -82,5 +88,6 @@ final class ConfiguracaoUsuario {
         self.onboardingConcluido = onboardingConcluido
         self.receitaAtivaID = receitaAtivaID
         self.ruaObturadorDenominador = ruaObturadorDenominador
+        self.fotosGratisUsadas = fotosGratisUsadas
     }
 }

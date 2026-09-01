@@ -82,3 +82,6 @@
 "photos_alert_body" = "Your photo is held here. Allow Photos access to save it.";
 "photos_alert_retry" = "Allow and save";
 "photos_alert_discard" = "Discard";
+
+/* Free photos remaining indicator before the paywall (rule 11.4) */
+"gratis_restantes" = "%d free photos";

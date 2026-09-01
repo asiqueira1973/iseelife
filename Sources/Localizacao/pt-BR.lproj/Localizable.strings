@@ -82,3 +82,6 @@
 "photos_alert_body" = "Sua foto está guardada aqui. Permita o acesso à Fototeca para salvá-la.";
 "photos_alert_retry" = "Permitir e salvar";
 "photos_alert_discard" = "Descartar";
+
+/* Indicador de fotos grátis restantes antes do paywall (regra 11.4) */
+"gratis_restantes" = "%d fotos grátis";

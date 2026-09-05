@@ -502,7 +502,7 @@ os pontos que **não podem ser quebrados** numa manutenção futura.
 - **Zebra/Peaking escondidos** atrás de flag (`mostrarZebraPeaking = false`) até calibrar.
 - **Cota grátis de 10 fotos antes do paywall** (`fotosGratisUsadas`, regra 11.4): app usável sem
   compra e sem login ("experimente antes de comprar"). Paridade com o Android — que precisou disso
-  para passar na revisão da Play (revisor sem conta de teste). Bumpado para **1.1.0 (build 6)**.
+  para passar na revisão da Play (revisor sem conta de teste). Vai na **1.2.0** (1.1.0 já está aprovada na loja).
 - **2 receitas em teste (build 7, iOS primeiro):** "Retrato 400" (ordem 7) e "Retrato 800" (ordem 8)
   — emulações de negativo de retrato (base Classic Chrome, insp. Fujifilm). Nomes sem marca de
   terceiro; 400/800 = ISO. Vão pro TestFlight; se aprovarem visualmente, sobem à produção e depois

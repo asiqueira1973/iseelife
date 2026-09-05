@@ -1,6 +1,7 @@
 I See Life — What's New (versão 1.2.0, build 8)
 Feature: catálogo de receitas renovado (mantém Retrato 400; adiciona 5 receitas
 inspiradas na Ricoh GR III; remove Mono/Positivo/Vívida/Retrato 800).
+App distribuído somente no Brasil — nota em pt-BR apenas.
 
 ==============================================================================
 pt-BR (Português — Brasil)
@@ -12,14 +13,3 @@ Catálogo de receitas renovado!
 • Retrato 400: negativo de retrato com tons de pele quentes e grão bonito.
 
 Compra única, sem assinatura. 100% offline, direto na hora do disparo.
-
-==============================================================================
-en (English)
-==============================================================================
-Refreshed recipe catalog!
-
-• New color recipes: Color Film, Americana Color, and Analog Film — from a natural look to punchy positive-film color.
-• Two new black & white recipes: Monochrome Film and Black & White Negative.
-• Retrato 400: portrait-negative tones with warm skin and beautiful grain.
-
-One-time purchase, no subscription. 100% offline, applied as you shoot.

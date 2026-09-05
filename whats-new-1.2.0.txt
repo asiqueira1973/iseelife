@@ -1,6 +1,7 @@
-I See Life — What's New (versão 1.2.0, build 8)
+I See Life — What's New (versão 1.2.0, build 9)
 Feature: catálogo de receitas renovado (mantém Retrato 400; adiciona 5 receitas
-inspiradas na Ricoh GR III; remove Mono/Positivo/Vívida/Retrato 800).
+inspiradas na Ricoh GR III; remove Mono/Positivo/Vívida/Retrato 800) + câmera na
+Tela de Bloqueio (LockedCameraCapture, Nível A — abre o app no Modo Rua).
 App distribuído somente no Brasil — nota em pt-BR apenas.
 
 ==============================================================================
@@ -11,5 +12,6 @@ Catálogo de receitas renovado!
 • Novas receitas de cor: Color Film, Americana Color e Analog Film — do tom natural ao visual saturado de filme positivo.
 • Duas novas receitas em preto e branco: Monochrome Film e Black & White Negative.
 • Retrato 400: negativo de retrato com tons de pele quentes e grão bonito.
+• Agora com atalho de câmera na Tela de Bloqueio: abra o visor direto do bloqueio.
 
 Compra única, sem assinatura. 100% offline, direto na hora do disparo.

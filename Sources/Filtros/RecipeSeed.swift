@@ -176,6 +176,55 @@ enum RecipeSeed {
                 clareza: 3,
                 tamanhoGrao: .pequeno
             ),
+
+            // ---- Receitas em teste (TestFlight) — emulações de negativo de retrato (base Classic
+            // Chrome), inspiradas em receitas Fujifilm. Nomes NÃO usam marca de terceiro; os números
+            // 400/800 são a sensibilidade ISO (genérica). hl/sh/sat em MEIO-PASSO ×2. Sem campo para
+            // Dynamic Range (DR400) nem Noise Reduction (−4) no modelo — aproximação pela curva/grão.
+
+            // "Retrato 400" — negativo de retrato ISO 400: tons de pele quentes, contido, grão fino.
+            Receita(
+                nomeExibicao: "Retrato 400",
+                inspiracao: "Negativo de retrato ISO 400",
+                highlight: 0,                 //  0
+                shadow: -4,                   // -2
+                saturacao: 4,                 // +2 (Color)
+                temperaturaWbKelvin: 5200,
+                tintaWb: 0,                   // eixo verde/magenta (o R/B vai nos ajustes abaixo)
+                intensidadeGrao: .forte,      // Grain Effect: Strong
+                nitidez: -2,                  // Sharpness -2
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 7,
+                ajusteVermelho: 1,            // WB +1 Red
+                ajusteAzul: -6,               // WB -6 Blue
+                efeitoColorChrome: .forte,    // Color Chrome: Strong
+                efeitoColorChromeAzul: .desligado, // Color Chrome Blue: Off
+                clareza: -2,                  // Clarity -2
+                tamanhoGrao: .pequeno         // Grain: Small
+            ),
+
+            // "Retrato 800" — negativo de retrato ISO 800: um pouco mais saturado e grão maior.
+            Receita(
+                nomeExibicao: "Retrato 800",
+                inspiracao: "Negativo de retrato ISO 800",
+                highlight: 2,                 // +1
+                shadow: 0,                    //  0
+                saturacao: 6,                 // +3 (Color)
+                temperaturaWbKelvin: 5200,
+                tintaWb: 0,
+                intensidadeGrao: .forte,      // Grain Effect: Strong
+                nitidez: -2,                  // Sharpness -2
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 8,
+                ajusteVermelho: 1,            // WB +1 Red
+                ajusteAzul: -5,               // WB -5 Blue
+                efeitoColorChrome: .forte,    // Color Chrome: Strong
+                efeitoColorChromeAzul: .fraco, // Color Chrome Blue: Weak
+                clareza: -4,                  // Clarity -4
+                tamanhoGrao: .grande          // Grain: Large
+            ),
         ]
     }
 }

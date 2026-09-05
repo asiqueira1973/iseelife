@@ -19,7 +19,7 @@ settings:
     DEVELOPMENT_TEAM: XGZW6Y6K25          # team de assinatura reaproveitado (spec 4)
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.1.0"
-    CURRENT_PROJECT_VERSION: "6"          # build 6: cota de 10 fotos grátis antes do paywall (regra 11.4)
+    CURRENT_PROJECT_VERSION: "7"          # build 7: 2 receitas em teste (Retrato 400/800) p/ TestFlight
     CODE_SIGN_STYLE: Automatic
     # #Predicate/consultas SwiftData geram warnings de concorrência (código da Apple);
     # mantém em minimal, mesmo racional dos outros apps.

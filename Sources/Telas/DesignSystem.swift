@@ -23,6 +23,8 @@ enum Estilo {
         case "Soft":     return Color(red: 0.20, green: 0.24, blue: 0.30) // azul frio
         case "Positivo": return Color(red: 0.18, green: 0.26, blue: 0.21) // verde dessaturado
         case "Vívida":   return Color(red: 0.36, green: 0.17, blue: 0.14) // Kodachrome vermelho punchy
+        case "Retrato 400": return Color(red: 0.34, green: 0.26, blue: 0.20) // negativo de retrato, quente
+        case "Retrato 800": return Color(red: 0.38, green: 0.25, blue: 0.18) // negativo de retrato, quente+
         default:         return Color(white: 0.25)
         }
     }

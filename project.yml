@@ -86,7 +86,7 @@ targets:
   # Controle / Tela de Bloqueio / Botão de Ação. Nível A: só abre o app (Modo Rua).
   # ---------------------------------------------------------------------------
   ISeeLifeCapture:
-    type: app-extension
+    type: extensionkit-extension        # ExtensionKit (vai em Extensions/, NÃO PlugIns/) — exigido pelo ponto com.apple.securecapture
     platform: iOS
     deploymentTarget:
       iOS: "18.0"

@@ -18,8 +18,8 @@ settings:
   base:
     DEVELOPMENT_TEAM: XGZW6Y6K25          # team de assinatura reaproveitado (spec 4)
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.2.0"            # 1.1 (com a cota grátis) já está no ar; 1.2 = catálogo revisado de receitas
-    CURRENT_PROJECT_VERSION: "8"          # build 8: mantém Retrato 400; +5 receitas Ricoh; remove Mono/Positivo/Vívida/Retrato 800 (TestFlight)
+    MARKETING_VERSION: "1.2.0"            # 1.2 = catálogo revisado + câmera na Tela de Bloqueio (LockedCameraCapture, Nível A)
+    CURRENT_PROJECT_VERSION: "9"          # build 9: substitui o build 8 na revisão da 1.2 — agora com a extensão de captura da tela de bloqueio
     CODE_SIGN_STYLE: Automatic
     # #Predicate/consultas SwiftData geram warnings de concorrência (código da Apple);
     # mantém em minimal, mesmo racional dos outros apps.
@@ -38,6 +38,7 @@ targets:
         excludes:
           - "**/.DS_Store"
           - "Controls"                    # a extensão de Control é target próprio (iOS 18)
+          - "Capture"                     # a extensão de captura da Tela de Bloqueio é target próprio (iOS 18)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.dablab.iseelife
@@ -49,6 +50,8 @@ targets:
         SUPPORTS_MACCATALYST: NO           # iOS-only (spec 3)
     dependencies:
       - target: ISeeLifeControls          # embute a extensão de Control no app
+        embed: true
+      - target: ISeeLifeCapture           # embute a extensão de captura da Tela de Bloqueio
         embed: true
 
   # ---------------------------------------------------------------------------
@@ -77,12 +80,38 @@ targets:
         SKIP_INSTALL: YES
         IPHONEOS_DEPLOYMENT_TARGET: "18.0"   # ControlWidget exige iOS 18 (base do projeto é 17)
 
+  # ---------------------------------------------------------------------------
+  # Extensão de captura da Tela de Bloqueio (LockedCameraCapture) — SOMENTE iOS 18+.
+  # É a PRESENÇA desta extensão que faz o app aparecer como câmera na Central de
+  # Controle / Tela de Bloqueio / Botão de Ação. Nível A: só abre o app (Modo Rua).
+  # ---------------------------------------------------------------------------
+  ISeeLifeCapture:
+    type: app-extension
+    platform: iOS
+    deploymentTarget:
+      iOS: "18.0"
+    sources:
+      - path: Sources/Capture
+        excludes:
+          - "**/.DS_Store"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.dablab.iseelife.capture
+        INFOPLIST_FILE: Sources/Capture/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        TARGETED_DEVICE_FAMILY: "1"
+        SKIP_INSTALL: YES
+        IPHONEOS_DEPLOYMENT_TARGET: "18.0"   # LockedCameraCapture exige iOS 18 (base do projeto é 17)
+    dependencies:
+      - sdk: LockedCameraCapture.framework
+
 schemes:
   ISeeLife:
     build:
       targets:
         ISeeLife: all
         ISeeLifeControls: all
+        ISeeLifeCapture: all
     run:
       config: Debug
       # StoreKit config local para testar o Paywall/compra em sandbox (spec 8.7/26).

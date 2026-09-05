@@ -21,10 +21,10 @@ enum Estilo {
         case "Neutra":   return Color(white: 0.55) // raw -> cinza neutro claro
         case "Classic":  return Color(red: 0.30, green: 0.22, blue: 0.13) // âmbar quente
         case "Soft":     return Color(red: 0.20, green: 0.24, blue: 0.30) // azul frio
-        case "Positivo": return Color(red: 0.18, green: 0.26, blue: 0.21) // verde dessaturado
-        case "Vívida":   return Color(red: 0.36, green: 0.17, blue: 0.14) // Kodachrome vermelho punchy
-        case "Retrato 400": return Color(red: 0.34, green: 0.26, blue: 0.20) // negativo de retrato, quente
-        case "Retrato 800": return Color(red: 0.38, green: 0.25, blue: 0.18) // negativo de retrato, quente+
+        case "Retrato 400":     return Color(red: 0.34, green: 0.26, blue: 0.20) // negativo de retrato, quente
+        case "Color Film":      return Color(red: 0.30, green: 0.28, blue: 0.22) // natural, levemente quente
+        case "Americana Color": return Color(red: 0.34, green: 0.22, blue: 0.16) // positive film quente/saturado
+        case "Analog Film":     return Color(red: 0.20, green: 0.28, blue: 0.24) // saturado, hue deslocado
         default:         return Color(white: 0.25)
         }
     }

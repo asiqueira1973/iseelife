@@ -63,8 +63,11 @@ enum RecipeSeed {
         try? context.save()
     }
 
-    // Catálogo fixo. Ordem 1 = "Neutra" (imagem crua do iPhone, padrão). As 4 receitas de cor
-    // seguem a tabela 11.2. Enhancement pós-spec pedido pelo Alexandre no device.
+    // Catálogo fixo (v1.2). Ordem 1 = "Neutra" (imagem crua do iPhone, padrão). Depois: Classic,
+    // Soft, Retrato 400 (Fuji, aprovada no TestFlight) e 5 receitas inspiradas na Ricoh GR III
+    // (Color Film, Americana Color, Analog Film, Monochrome Film, Black & White Negative).
+    // Removidas em v1.2: Mono, Positivo, Vívida, Retrato 800 (o sincronizarCatalogo apaga as
+    // não-canônicas na próxima abertura). Enhancement pós-spec pedido pelo Alexandre no device.
     static func receitasPadrao() -> [Receita] {
         [
             // "Neutra" — imagem crua, SEM receita. Todos os parâmetros neutros: o RecipePipeline
@@ -118,69 +121,8 @@ enum RecipeSeed {
                 filtroMono: nil,
                 ordemExibicao: 3
             ),
-            // "Mono" — insp. Acros + filtro vermelho. shadow "+3 a +4" -> +4 (extremo mais
-            // "moody", casando com a inspiração "Moody Monochrome"). saturação "—" (N/A em mono).
-            Receita(
-                nomeExibicao: "Mono",
-                inspiracao: "Acros+R",
-                highlight: -2,                // -1,0 em meio-passo ×2
-                shadow: 8,                    // +4,0 (faixa +3 a +4 -> +4)
-                saturacao: 0,                 // "—" no spec (irrelevante em monocromático)
-                temperaturaWbKelvin: nil,     // "neutro" -> segue sensor, sem shift
-                tintaWb: -1,
-                intensidadeGrao: .forte,
-                nitidez: -2,
-                monocromatico: true,
-                filtroMono: .vermelho,
-                ordemExibicao: 4
-            ),
-            // "Positivo" — insp. Ricoh GR III Positive Film. highlight "-2 a -4" -> -3;
-            // shadow "+2 a +4" -> +3 (pontos médios). WB "fria, correção de highlight ativa"
-            // -> 5000K (levemente fria); a correção de highlight é coberta pelo highlight -3.
-            Receita(
-                nomeExibicao: "Positivo",
-                inspiracao: "Ricoh GR Positive Film",
-                highlight: -6,                // -3,0 em meio-passo ×2 (faixa -2 a -4 -> -3)
-                shadow: 6,                    // +3,0 (faixa +2 a +4 -> +3)
-                saturacao: 6,                 // +3,0
-                temperaturaWbKelvin: 5000,    // "fria" (qualitativo) -> Kelvin levemente baixo
-                tintaWb: 3,
-                intensidadeGrao: .nenhum,
-                nitidez: 0,
-                monocromatico: false,
-                filtroMono: nil,
-                ordemExibicao: 5
-            ),
-
-            // ---- Receita nova (v1.1) — só a Vívida foi aprovada visualmente no device; Retrô,
-            // Retrato e Dourada foram removidas. hl/sh/sat em MEIO-PASSO ×2.
-
-            // "Vívida" — insp. Kodachrome 64 (cores punchy, clareza alta, grão fino).
-            Receita(
-                nomeExibicao: "Vívida",
-                inspiracao: "Kodachrome 64",
-                highlight: 0,                 //  0
-                shadow: 1,                    // +0,5
-                saturacao: 4,                 // +2,0
-                temperaturaWbKelvin: 5500,    // Daylight
-                tintaWb: 0,
-                intensidadeGrao: .fraco,
-                nitidez: 1,
-                monocromatico: false,
-                filtroMono: nil,
-                ordemExibicao: 6,
-                ajusteVermelho: 2,
-                ajusteAzul: -5,
-                efeitoColorChrome: .forte,
-                efeitoColorChromeAzul: .desligado,
-                clareza: 3,
-                tamanhoGrao: .pequeno
-            ),
-
-            // ---- Receitas em teste (TestFlight) — emulações de negativo de retrato (base Classic
-            // Chrome), inspiradas em receitas Fujifilm. Nomes NÃO usam marca de terceiro; os números
-            // 400/800 são a sensibilidade ISO (genérica). hl/sh/sat em MEIO-PASSO ×2. Sem campo para
-            // Dynamic Range (DR400) nem Noise Reduction (−4) no modelo — aproximação pela curva/grão.
+            // ---- Receita aprovada no TestFlight (mantida). hl/sh/sat em MEIO-PASSO ×2. Nome NÃO
+            // usa marca de terceiro; o número 400 é a sensibilidade ISO (genérica).
 
             // "Retrato 400" — negativo de retrato ISO 400: tons de pele quentes, contido, grão fino.
             Receita(
@@ -195,7 +137,7 @@ enum RecipeSeed {
                 nitidez: -2,                  // Sharpness -2
                 monocromatico: false,
                 filtroMono: nil,
-                ordemExibicao: 7,
+                ordemExibicao: 4,
                 ajusteVermelho: 1,            // WB +1 Red
                 ajusteAzul: -6,               // WB -6 Blue
                 efeitoColorChrome: .forte,    // Color Chrome: Strong
@@ -204,26 +146,117 @@ enum RecipeSeed {
                 tamanhoGrao: .pequeno         // Grain: Small
             ),
 
-            // "Retrato 800" — negativo de retrato ISO 800: um pouco mais saturado e grão maior.
+            // ---- Receitas NOVAS (TestFlight) — inspiradas em receitas Ricoh GR III (Image Control).
+            // O Image Control da Ricoh tem mais controles que o pipeline do app (Hue, High/Low Key,
+            // Contrast base, Shading, Toning, Filter Effect, correções de highlight/shadow/iluminação
+            // periférica) — SEM campo no modelo, então são APROXIMAÇÕES a calibrar no device:
+            //   • saturacao  <- Saturation
+            //   • highlight  <- Contrast (Highlight)   [sinal direto; se vier invertido, trocar]
+            //   • shadow     <- Contrast (Shadow)       [sinal direto; idem]
+            //   • nitidez    <- Sharpness   • clareza <- Clarity   • grão <- Grain Effect
+            //   • WB: usa CT quando informado; a compensação A/G (âmbar/verde) vira ajuste R/B + tinta.
+            // Hue, High/Low Key e Contrast base ficam de fora (sem campo). hl/sh/sat em MEIO-PASSO ×2.
+
+            // "Color Film" — Effect Standard, natural com sombras suaves (Contrast Shadow -4).
             Receita(
-                nomeExibicao: "Retrato 800",
-                inspiracao: "Negativo de retrato ISO 800",
-                highlight: 2,                 // +1
-                shadow: 0,                    //  0
-                saturacao: 6,                 // +3 (Color)
-                temperaturaWbKelvin: 5200,
-                tintaWb: 0,
-                intensidadeGrao: .forte,      // Grain Effect: Strong
-                nitidez: -2,                  // Sharpness -2
+                nomeExibicao: "Color Film",
+                inspiracao: "Ricoh GR — Standard",
+                highlight: 4,                 // Contrast (Highlight) +2  -> +2 ×2
+                shadow: -8,                   // Contrast (Shadow) -4     -> -4 ×2
+                saturacao: 2,                 // Saturation +1            -> +1 ×2
+                temperaturaWbKelvin: nil,     // WB Auto (AWB) -> segue sensor; calor vai no R/B
+                tintaWb: -1,                  // WB comp G:2 (verde leve)
+                intensidadeGrao: .nenhum,     // Grain não especificado
+                nitidez: 1,                   // Sharpness +1
                 monocromatico: false,
                 filtroMono: nil,
+                ordemExibicao: 5,
+                ajusteVermelho: 5,            // WB comp A:9 (âmbar/quente)
+                ajusteAzul: -5,
+                efeitoColorChrome: .desligado,
+                efeitoColorChromeAzul: .desligado,
+                clareza: -1                   // Clarity -1
+            ),
+
+            // "Americana Color" — Positive Film, saturada e contrastada, WB quente (CT 5250K).
+            Receita(
+                nomeExibicao: "Americana Color",
+                inspiracao: "Ricoh GR — Positive Film",
+                highlight: -6,                // Contrast (Highlight) -3  -> -3 ×2
+                shadow: 8,                    // Contrast (Shadow) +4     -> +4 ×2
+                saturacao: 4,                 // Saturation +2            -> +2 ×2
+                temperaturaWbKelvin: 5250,    // CT 5250K
+                tintaWb: -3,                  // WB comp G:5 (verde)
+                intensidadeGrao: .nenhum,
+                nitidez: 1,                   // Sharpness +1
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 6,
+                ajusteVermelho: 5,            // WB comp A:10 (âmbar) sobre o CT
+                ajusteAzul: -5,
+                efeitoColorChrome: .fraco,    // Positive Film comprime tons saturados (aprox.)
+                efeitoColorChromeAzul: .desligado,
+                clareza: 2                    // Clarity +2
+            ),
+
+            // "Analog Film" — Positive Film bem saturada (Sat +4), Hue -4 (sem campo -> aproximado
+            // só pela saturação/WB), WB 6300K.
+            Receita(
+                nomeExibicao: "Analog Film",
+                inspiracao: "Ricoh GR — Positive Film",
+                highlight: -8,                // Contrast (Highlight) -4  -> -4 ×2
+                shadow: 8,                    // Contrast (Shadow) +4     -> +4 ×2
+                saturacao: 8,                 // Saturation +4            -> +4 ×2
+                temperaturaWbKelvin: 6300,    // CT 6300K
+                tintaWb: -3,                  // WB comp G:6 (verde)
+                intensidadeGrao: .nenhum,
+                nitidez: 0,                   // Sharpness 0
+                monocromatico: false,
+                filtroMono: nil,
+                ordemExibicao: 7,
+                ajusteVermelho: 1,            // WB comp A:1 (âmbar leve)
+                ajusteAzul: -1,
+                efeitoColorChrome: .fraco,    // Positive Film (aprox.)
+                efeitoColorChromeAzul: .desligado,
+                clareza: -2                   // Clarity -2
+            ),
+
+            // "Monochrome Film" — BW Monotone, contraste baixo (Contrast Highlight/Shadow -4/-4),
+            // grão leve. Filter Effect 2 sem mapa limpo -> sem filtro.
+            Receita(
+                nomeExibicao: "Monochrome Film",
+                inspiracao: "Ricoh GR — BW Monotone",
+                highlight: -8,                // Contrast (Highlight) -4  -> -4 ×2
+                shadow: -8,                   // Contrast (Shadow) -4     -> -4 ×2
+                saturacao: 0,                 // mono
+                temperaturaWbKelvin: nil,     // irrelevante em mono
+                tintaWb: 0,
+                intensidadeGrao: .fraco,      // Grain Effect 1
+                nitidez: 1,                   // Sharpness +1
+                monocromatico: true,
+                filtroMono: nil,              // Filter Effect 2 (sem mapa) -> nenhum
                 ordemExibicao: 8,
-                ajusteVermelho: 1,            // WB +1 Red
-                ajusteAzul: -5,               // WB -5 Blue
-                efeitoColorChrome: .forte,    // Color Chrome: Strong
-                efeitoColorChromeAzul: .fraco, // Color Chrome Blue: Weak
-                clareza: -4,                  // Clarity -4
-                tamanhoGrao: .grande          // Grain: Large
+                clareza: 2,                   // Clarity +2
+                tamanhoGrao: .pequeno
+            ),
+
+            // "Black & White Negative" — Hi-Contrast B&W, highlights suaves (Contrast Highlight -4),
+            // grão mais presente (Grain Effect 2).
+            Receita(
+                nomeExibicao: "Black & White Negative",
+                inspiracao: "Ricoh GR — Hi-Contrast B&W",
+                highlight: -8,                // Contrast (Highlight) -4  -> -4 ×2
+                shadow: 0,                    // Contrast (Shadow) 0
+                saturacao: 0,                 // mono
+                temperaturaWbKelvin: nil,     // irrelevante em mono
+                tintaWb: 0,
+                intensidadeGrao: .medio,      // Grain Effect 2
+                nitidez: -1,                  // Sharpness -1
+                monocromatico: true,
+                filtroMono: nil,              // Filter Effect Off
+                ordemExibicao: 9,
+                clareza: 2,                   // Clarity +2
+                tamanhoGrao: .pequeno
             ),
         ]
     }

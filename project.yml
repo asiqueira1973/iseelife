@@ -18,8 +18,8 @@ settings:
   base:
     DEVELOPMENT_TEAM: XGZW6Y6K25          # team de assinatura reaproveitado (spec 4)
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.2.0"            # 1.1 (com a cota grátis) já está no ar; 1.2 = receitas Retrato 400/800
-    CURRENT_PROJECT_VERSION: "7"          # build 7: receitas Retrato 400/800 (TestFlight)
+    MARKETING_VERSION: "1.2.0"            # 1.1 (com a cota grátis) já está no ar; 1.2 = catálogo revisado de receitas
+    CURRENT_PROJECT_VERSION: "8"          # build 8: mantém Retrato 400; +5 receitas Ricoh; remove Mono/Positivo/Vívida/Retrato 800 (TestFlight)
     CODE_SIGN_STYLE: Automatic
     # #Predicate/consultas SwiftData geram warnings de concorrência (código da Apple);
     # mantém em minimal, mesmo racional dos outros apps.

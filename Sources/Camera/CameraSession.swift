@@ -115,7 +115,8 @@ final class CameraSession: NSObject, ObservableObject {
             ?? lentesDisponiveis.first?.id ?? .wide
 
         session.beginConfiguration()
-        session.sessionPreset = .photo
+        // O preset agora é definido dentro de configurarEntrada: .inputPriority + um formato de
+        // ALTA resolução para o frame que a captura silenciosa congela (o .photo entregava ~1MP).
         configurarEntrada(lente: alvo)
         if session.canAddOutput(videoOutput) {
             videoOutput.videoSettings = [kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA]
@@ -126,6 +127,7 @@ final class CameraSession: NSObject, ObservableObject {
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
             photoOutput.maxPhotoQualityPrioritization = .quality
+            aplicarMaxPhotoDimensions()   // foto real (silencioso OFF) na resolução máxima (12MP)
         }
         session.commitConfiguration()
         aplicarOrientacaoRetrato()
@@ -169,10 +171,64 @@ final class CameraSession: NSObject, ObservableObject {
             currentInput = input
             currentDevice = disp.device
             lenteAtual = disp.id
+            // Sobe a resolução do frame de vídeo (que a captura silenciosa congela) ANTES de ler
+            // ranges/zoom, pois trocar o activeFormat reseta esses valores.
+            configurarFormatoAltaResolucao(disp.device)
+            aplicarMaxPhotoDimensions()
             lerRangesDoDispositivo(disp.device)
             // Reaplica o crop de focal do Rua ao (re)configurar a lente: wide -> focal escolhida;
             // ultra-wide -> nativo (1.0). Assim trocar de lente mantém a focal coerente.
             aplicarZoomParaLenteAtual()
+        }
+    }
+
+    // MARK: - Resolução de captura (conserto do "1MP")
+    // A captura silenciosa congela o último frame de VÍDEO. Com sessionPreset = .photo esse frame
+    // vem em ~1MP (resolução de preview) -> foto salva minúscula. Aqui trocamos para
+    // .inputPriority + o MAIOR formato 4:3 a >=30fps, elevando o frame silencioso a vários MP.
+    // O preview é reduzido à parte (downscaleParaPreview), então não fica pesado.
+
+    // Escolhe e aplica o melhor formato de vídeo. Fallback: mantém .photo (comportamento anterior).
+    private func configurarFormatoAltaResolucao(_ device: AVCaptureDevice) {
+        guard let fmt = melhorFormatoDeVideo(device) else {
+            session.sessionPreset = .photo
+            return
+        }
+        session.sessionPreset = .inputPriority
+        do {
+            try device.lockForConfiguration()
+            device.activeFormat = fmt
+            device.unlockForConfiguration()
+        } catch {
+            session.sessionPreset = .photo
+        }
+    }
+
+    // Maior formato 4:3 (enquadramento de foto) que sustenta >= 30fps (preview fluido). Sem 4:3,
+    // usa o maior disponível. nil se não houver candidato utilizável.
+    private func melhorFormatoDeVideo(_ device: AVCaptureDevice) -> AVCaptureDevice.Format? {
+        func dims(_ f: AVCaptureDevice.Format) -> CMVideoDimensions {
+            CMVideoFormatDescriptionGetDimensions(f.formatDescription)
+        }
+        func area(_ f: AVCaptureDevice.Format) -> Int { let d = dims(f); return Int(d.width) * Int(d.height) }
+        let candidatos = device.formats.filter { f in
+            f.videoSupportedFrameRateRanges.contains { $0.maxFrameRate >= 30 }
+        }
+        guard !candidatos.isEmpty else { return nil }
+        let quatroTres = candidatos.filter { f in
+            let d = dims(f); return abs(Double(d.width) / Double(d.height) - 4.0 / 3.0) < 0.02
+        }
+        let pool = quatroTres.isEmpty ? candidatos : quatroTres
+        return pool.max(by: { area($0) < area($1) })
+    }
+
+    // Foto real (AVCapturePhotoOutput, silencioso OFF) na resolução máxima do formato ativo (12MP).
+    // Necessário com .inputPriority (o .photo maximizava sozinho).
+    func aplicarMaxPhotoDimensions() {
+        guard #available(iOS 16.0, *), let device = currentDevice else { return }
+        let dims = device.activeFormat.supportedMaxPhotoDimensions
+        if let maxDim = dims.max(by: { Int($0.width) * Int($0.height) < Int($1.width) * Int($1.height) }) {
+            photoOutput.maxPhotoDimensions = maxDim
         }
     }
 

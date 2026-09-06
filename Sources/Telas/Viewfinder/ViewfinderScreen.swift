@@ -148,6 +148,13 @@ struct ViewfinderScreen: View {
     private func controlesInferiores(geo: GeometryProxy) -> some View {
         if vm.modo == .rua {
             VStack(spacing: 0) {
+                // Seletor de distância focal (28/35/40) — só na lente wide (a focal é um crop da
+                // wide; na ultra-wide/0.5× não se aplica).
+                if camera.lenteAtual == .wide {
+                    FocalSelector(focais: vm.focaisRua, atual: vm.focalAtual,
+                                  aoSelecionar: { vm.selecionarFocal($0) })
+                        .padding(.bottom, 12)
+                }
                 RecipeCarousel(
                     receitas: vm.receitas, ativa: vm.receitaAtiva, camera: camera,
                     aoSelecionar: { vm.selecionarReceita($0) }

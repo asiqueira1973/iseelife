@@ -1,8 +1,13 @@
-# Esboço de épico — Seletor de distância focal no Modo Rua (28 / 35 / 50)
+# Épico — Seletor de distância focal no Modo Rua (28 / 35 / 40)
 
-> Status: ESBOÇO (ideia), não é spec final. Inspirado na Leica LUX, mas SÓ a parte de
-> distância focal (enquadramento). Fica de fora, de propósito, a simulação de abertura/
+> Status: IMPLEMENTADO (v1.3, build 10) — falta teste em device. Inspirado na Leica LUX, mas SÓ a
+> parte de distância focal (enquadramento). Fica de fora, de propósito, a simulação de abertura/
 > bokeh/caráter de lente (isso seria outro épico, pesado e menos "cara de rua").
+>
+> Como ficou: campo `focalRuaMm` na ConfiguracaoUsuario (default 28, migração aditiva);
+> `CameraSession.definirFocalRua` aplica `videoZoomFactor = focal/26` na lente wide (crop do
+> sensor, vale p/ preview E captura); seletor `FocalSelector` (pílula 28·35·40) no Modo Rua, só
+> quando a wide está ativa; no Pro e na ultra-wide volta ao quadro nativo.
 
 ## 1. Objetivo
 Deixar o fotógrafo escolher a **distância focal** no Modo Rua — trabalhando como um telêmetro
@@ -48,8 +53,8 @@ leve pra padronizar o tamanho do arquivo (custo: suavização). Talvez: mostrar 
 mas deixar a qualidade acontecer conforme o device (sem esconder nada do usuário).
 
 ## 6. Conjunto de focais
-- **v1:** 28 · 35 · 50 (28 default, ou nativo). Sem o 40 (a LUX tem, mas não é prioridade de rua).
-- Futuro: 40 opcional; talvez 24/21 pra quem curte grande-angular.
+- **v1 (implementado):** 28 · 35 · 40 (28 default). Sem o 50 (crop pesado demais em aparelhos 12MP).
+- Futuro: talvez 24/21 pra quem curte grande-angular; 50 só em aparelhos com tele/48MP.
 
 ## 7. Fora de escopo (deixar claro)
 - Simulação de **abertura / profundidade de campo / bokeh / caráter de lente** (Noctilux etc.).

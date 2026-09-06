@@ -35,6 +35,38 @@ struct ModeToggle: View {
     }
 }
 
+// Seletor de distância focal do Modo Rua (28 / 35 / 40 mm) — pílula segmentada, ativo em âmbar.
+// Enquadramento por crop na lente wide (telêmetro de foco fixo). Aparece só no Rua e na wide.
+struct FocalSelector: View {
+    let focais: [Int]
+    let atual: Int
+    var aoSelecionar: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(focais, id: \.self) { mm in
+                segmento(mm)
+            }
+        }
+        .padding(3)
+        .background(Capsule().fill(Color.black.opacity(0.55)))
+        .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+    }
+
+    private func segmento(_ mm: Int) -> some View {
+        let ativo = mm == atual
+        return Text("\(mm)")
+            .font(.system(size: 14, weight: .bold)).monospacedDigit()
+            .foregroundStyle(ativo ? Estilo.accent : Estilo.textoSecundario)
+            .padding(.vertical, 6).padding(.horizontal, 16)
+            .background(Capsule().fill(ativo ? Color.white.opacity(0.08) : .clear))
+            .contentShape(Capsule())
+            .onTapGesture { if !ativo { aoSelecionar(mm) } }
+            .accessibilityLabel(Text("\(mm)mm"))
+            .accessibilityAddTraits(ativo ? [.isSelected, .isButton] : .isButton)
+    }
+}
+
 // Ícone de troca de lente com o rótulo de zoom (0.5×/1×). Oculto pela tela quando há só 1 lente.
 struct LensButton: View {
     let lente: LenteCamera

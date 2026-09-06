@@ -58,6 +58,12 @@ final class ConfiguracaoUsuario {
     // login. Default inline (0) para migração SwiftData aditiva e automática. Paridade com o Android.
     var fotosGratisUsadas: Int = 0
 
+    // focal_rua_mm — distância focal escolhida no Modo Rua (enhancement pós-spec). Enquadramento
+    // por CROP do sensor na lente wide: 28 / 35 / 40 mm (equivalentes clássicos de fotografia de
+    // rua). Guarda a focal em mm; a CameraSession converte para videoZoomFactor sobre ~26mm nativo.
+    // Default inline (28) para migração SwiftData aditiva e automática.
+    var focalRuaMm: Int = 28
+
     // cria a linha única com os defaults exatos da seção 7 / DBML.
     init(
         id: UUID = UUID(),
@@ -73,7 +79,8 @@ final class ConfiguracaoUsuario {
         onboardingConcluido: Bool = false,
         receitaAtivaID: UUID? = nil,
         ruaObturadorDenominador: Int? = nil,
-        fotosGratisUsadas: Int = 0
+        fotosGratisUsadas: Int = 0,
+        focalRuaMm: Int = 28
     ) {
         self.id = id
         self.idiomaPreferido = idiomaPreferido
@@ -89,5 +96,6 @@ final class ConfiguracaoUsuario {
         self.receitaAtivaID = receitaAtivaID
         self.ruaObturadorDenominador = ruaObturadorDenominador
         self.fotosGratisUsadas = fotosGratisUsadas
+        self.focalRuaMm = focalRuaMm
     }
 }

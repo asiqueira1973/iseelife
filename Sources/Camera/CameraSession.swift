@@ -26,6 +26,15 @@ final class CameraSession: NSObject, ObservableObject {
     @Published var lenteAtual: LenteCamera = .wide
     @Published var sessaoRodando = false
 
+    // MARK: - Distância focal no Modo Rua (enhancement pós-spec)
+    // Enquadramento por CROP do sensor na lente WIDE, ao estilo telêmetro de foco fixo: o
+    // fotógrafo escolhe 28 / 35 / 40 mm (equivalentes clássicos de rua). Convertido em
+    // videoZoomFactor sobre a focal nativa da wide (~26mm equiv. na maioria dos iPhones, incl.
+    // 13 mini). O crop vale para o preview E para a captura (WYSIWYG). Só no Modo Rua.
+    static let focaisRuaMm = [28, 35, 40]
+    private let baseFocalMm: Double = 26.0
+    @Published var focalRuaMm: Int = 28
+
     // Valores atuais dos controles manuais (Modo Pro) — refletidos em texto ao lado do slider.
     @Published var isoAtual: Float = 100
     @Published var isoRange: ClosedRange<Float> = 50...3200
@@ -161,6 +170,41 @@ final class CameraSession: NSObject, ObservableObject {
             currentDevice = disp.device
             lenteAtual = disp.id
             lerRangesDoDispositivo(disp.device)
+            // Reaplica o crop de focal do Rua ao (re)configurar a lente: wide -> focal escolhida;
+            // ultra-wide -> nativo (1.0). Assim trocar de lente mantém a focal coerente.
+            aplicarZoomParaLenteAtual()
+        }
+    }
+
+    // MARK: - Zoom / distância focal (Rua)
+
+    // Converte a focal do Rua em videoZoomFactor e aplica na lente ATUAL. Só a wide recebe o
+    // crop; a ultra-wide fica no nativo (1.0). Roda na videoQueue (serializa com o loop de AE
+    // que também trava a configuração do device).
+    // O crop de focal só vale no Modo Rua e na lente WIDE. Fora disso (Pro, ou ultra-wide) o
+    // enquadramento é o nativo da lente (1.0).
+    func aplicarZoomParaLenteAtual() {
+        let cropAtivo = (lenteAtual == .wide) && !modoProAtivo
+        let mm = focalRuaMm
+        videoQueue.async { [weak self] in
+            guard let self, let device = self.currentDevice else { return }
+            let alvo: CGFloat = cropAtivo ? CGFloat(Double(mm) / self.baseFocalMm) : 1.0
+            let fator = min(max(alvo, 1.0), device.maxAvailableVideoZoomFactor)
+            do {
+                try device.lockForConfiguration()
+                device.videoZoomFactor = fator
+                device.unlockForConfiguration()
+            } catch { /* mantém o zoom anterior */ }
+        }
+    }
+
+    // UI (Modo Rua): escolhe a focal. Garante a lente wide (a focal é um crop da wide) e aplica.
+    func definirFocalRua(_ mm: Int) {
+        focalRuaMm = mm
+        if lenteAtual != .wide, lentesDisponiveis.contains(where: { $0.id == .wide }) {
+            trocarLente(para: .wide)   // trocarLente -> configurarEntrada -> aplicarZoomParaLenteAtual
+        } else {
+            aplicarZoomParaLenteAtual()
         }
     }
 
@@ -197,6 +241,8 @@ final class CameraSession: NSObject, ObservableObject {
             resetarFocoWBContinuo()
             iniciarShutterPriority()
         }
+        // Pro = quadro cheio; Rua = crop da focal escolhida. aplicarZoom respeita o modo atual.
+        aplicarZoomParaLenteAtual()
     }
 
     // Define o piso de obturador do Rua (denominador: 250 => 1/250s) e reaplica se estiver no Rua.

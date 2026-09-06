@@ -127,9 +127,10 @@ final class CameraSession: NSObject, ObservableObject {
         if session.canAddOutput(photoOutput) {
             session.addOutput(photoOutput)
             photoOutput.maxPhotoQualityPrioritization = .quality
-            aplicarMaxPhotoDimensions()   // foto real (silencioso OFF) na resolução máxima (12MP)
         }
         session.commitConfiguration()
+        // Só AGORA, com o photoOutput conectado, dá pra setar a resolução máxima da foto real.
+        aplicarMaxPhotoDimensions()
         aplicarOrientacaoRetrato()
 
         videoQueue.async { [weak self] in
@@ -159,6 +160,7 @@ final class CameraSession: NSObject, ObservableObject {
         if let currentInput { session.removeInput(currentInput) }
         configurarEntrada(lente: lente)
         session.commitConfiguration()
+        aplicarMaxPhotoDimensions()   // o formato pode ter mudado com a lente; reaplica
         aplicarOrientacaoRetrato()
     }
 
@@ -172,9 +174,9 @@ final class CameraSession: NSObject, ObservableObject {
             currentDevice = disp.device
             lenteAtual = disp.id
             // Sobe a resolução do frame de vídeo (que a captura silenciosa congela) ANTES de ler
-            // ranges/zoom, pois trocar o activeFormat reseta esses valores.
+            // ranges/zoom, pois trocar o activeFormat reseta esses valores. (maxPhotoDimensions é
+            // aplicado SÓ depois do commit, quando o photoOutput já está conectado — senão crasha.)
             configurarFormatoAltaResolucao(disp.device)
-            aplicarMaxPhotoDimensions()
             lerRangesDoDispositivo(disp.device)
             // Reaplica o crop de focal do Rua ao (re)configurar a lente: wide -> focal escolhida;
             // ultra-wide -> nativo (1.0). Assim trocar de lente mantém a focal coerente.
@@ -226,10 +228,12 @@ final class CameraSession: NSObject, ObservableObject {
     // Necessário com .inputPriority (o .photo maximizava sozinho).
     func aplicarMaxPhotoDimensions() {
         guard #available(iOS 16.0, *), let device = currentDevice else { return }
+        // Só toca no photoOutput se ele JÁ estiver conectado à sessão (senão lança exceção/crash).
+        guard session.outputs.contains(photoOutput) else { return }
         let dims = device.activeFormat.supportedMaxPhotoDimensions
-        if let maxDim = dims.max(by: { Int($0.width) * Int($0.height) < Int($1.width) * Int($1.height) }) {
-            photoOutput.maxPhotoDimensions = maxDim
-        }
+        guard let maxDim = dims.max(by: { Int($0.width) * Int($0.height) < Int($1.width) * Int($1.height) })
+        else { return }
+        photoOutput.maxPhotoDimensions = maxDim
     }
 
     // MARK: - Zoom / distância focal (Rua)

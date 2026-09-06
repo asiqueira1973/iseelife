@@ -1,0 +1,18 @@
+I See Life — What's New (versão 1.3.0, build 10)
+Feature principal: seletor de distância focal (28/35/40) no Modo Rua. Reaproveita o
+texto da 1.2 (catálogo de receitas + câmera na tela de bloqueio) e adiciona a linha
+das distâncias focais.
+App distribuído somente no Brasil — nota em pt-BR apenas.
+
+==============================================================================
+pt-BR (Português — Brasil)
+==============================================================================
+Catálogo de receitas renovado!
+
+• Novas receitas de cor: Color Film, Americana Color e Analog Film — do tom natural ao visual saturado de filme positivo.
+• Duas novas receitas em preto e branco: Monochrome Film e Black & White Negative.
+• Retrato 400: negativo de retrato com tons de pele quentes e grão bonito.
+• Agora com atalho de câmera na Tela de Bloqueio: abra o visor direto do bloqueio.
+• Distâncias focais no Modo Rua: escolha 28, 35 ou 40 mm e enquadre como um telêmetro, direto no visor.
+
+Compra única, sem assinatura. 100% offline, direto na hora do disparo.

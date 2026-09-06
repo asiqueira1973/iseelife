@@ -55,6 +55,8 @@ final class ViewfinderViewModel: ObservableObject {
         camera.atualizarStatusPermissao()
         // Define o piso de obturador do Rua antes de iniciar (o loop liga quando a sessão sobe).
         camera.ruaShutterAlvoSegundos = 1.0 / Double(ruaObturadorDenominador)
+        // Restaura a focal escolhida no Rua antes de iniciar (o crop é aplicado ao configurar a lente).
+        camera.focalRuaMm = config.focalRuaMm
         camera.iniciar(lentePreferida: config.ultimaLenteUsada)
         camera.definirPreviewPB(config.previewPbAtivado)
         Task {
@@ -95,6 +97,21 @@ final class ViewfinderViewModel: ObservableObject {
         // No Rua, trocar de receita dá um "refresh": foco/WB voltam pro automático, para não
         // carregar ajustes manuais feitos no Pro (v1.1).
         if modo == .rua { camera.resetarFocoWBContinuo() }
+    }
+
+    // MARK: - Distância focal no Modo Rua (enhancement pós-spec)
+
+    // Focais oferecidas (mm) e a atual (para o seletor do visor).
+    var focaisRua: [Int] { CameraSession.focaisRuaMm }
+    var focalAtual: Int { camera.focalRuaMm }
+
+    // Escolhe a focal (28/35/40) e persiste. O crop é aplicado na lente wide (a CameraSession
+    // garante a wide se estiver na ultra-wide).
+    func selecionarFocal(_ mm: Int) {
+        guard mm != camera.focalRuaMm else { return }
+        camera.definirFocalRua(mm)
+        config.focalRuaMm = mm
+        salvarConfig()
     }
 
     // Alterna para a próxima lente disponível (épico 8.3). Lembra a última usada.

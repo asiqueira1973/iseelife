@@ -22,13 +22,18 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         guard let pixelBuffer = CMSampleBufferGetImageBuffer(sampleBuffer) else { return }
         let raw = CIImage(cvPixelBuffer: pixelBuffer)
 
-        // Guarda o frame cru (full-frame) para a captura silenciosa.
+        // Guarda o frame cru em RESOLUÇÃO CHEIA para a captura silenciosa (agora vários MP graças
+        // ao formato de alta resolução — antes vinha ~1MP com o preset .photo).
         frameLock.lock()
         ultimoFrameCru = raw
         frameLock.unlock()
 
+        // Para o PREVIEW, reduz o frame antes do pipeline: a tela não precisa da resolução cheia,
+        // e processar a receita em vários MP a 30fps esquentaria/travaria. A captura continua cheia.
+        let paraPreview = downscaleParaPreview(raw)
+
         // Aplica a receita ativa (regra 11.2/11.3). No preview do Modo Rua, respeita o P&B.
-        var imagem = pipeline.apply(receitaAtivaValores, to: raw, forceMonochrome: previewPB && !modoProAtivo)
+        var imagem = pipeline.apply(receitaAtivaValores, to: paraPreview, forceMonochrome: previewPB && !modoProAtivo)
 
         // Sobreposições de assistência só no Modo Pro e só com o toggle ligado (épico 8.2).
         if modoProAtivo {
@@ -37,6 +42,16 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
 
         renderer?.enfileirar(imagem)
+    }
+
+    // Reduz o frame para ~1440px de largura só para o preview (a captura usa o frame cheio). Mantém
+    // o preview leve e frio mesmo com o formato de câmera em alta resolução.
+    private func downscaleParaPreview(_ img: CIImage) -> CIImage {
+        let largura = img.extent.width
+        let alvo: CGFloat = 1440
+        guard largura > alvo else { return img }
+        let escala = alvo / largura
+        return img.transformed(by: CGAffineTransform(scaleX: escala, y: escala))
     }
 
     // Ponto único de captura (épico 8.1 / regra 11.3). Escolhe o caminho conforme o toggle
@@ -88,6 +103,10 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
     private func capturarPorPhotoOutput(completion: @escaping (Data?) -> Void) {
         let settings = AVCapturePhotoSettings()
         settings.photoQualityPrioritization = .quality
+        // Casa a resolução máxima do output (senão, com .inputPriority, a foto pode sair reduzida).
+        if #available(iOS 16.0, *) {
+            settings.maxPhotoDimensions = photoOutput.maxPhotoDimensions
+        }
         let delegate = PhotoCaptureDelegate(pipeline: pipeline, receita: receitaAtivaValores,
                                             codificar: { [weak self] img in self?.codificarJPEG(img) }) { [weak self] data in
             self?.photoDelegate = nil

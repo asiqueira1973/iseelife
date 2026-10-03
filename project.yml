@@ -18,8 +18,8 @@ settings:
   base:
     DEVELOPMENT_TEAM: XGZW6Y6K25          # team de assinatura reaproveitado (spec 4)
     SWIFT_VERSION: "5.0"
-    MARKETING_VERSION: "1.3.0"            # 1.2 já no ar; 1.3 = seletor de focal (28/35/40) + captura em ALTA resolução
-    CURRENT_PROJECT_VERSION: "12"         # build 12: alta-res + conserto do crash de launch (maxPhotoDimensions só após o commit)
+    MARKETING_VERSION: "1.4.0"            # 1.4 = foto respeita a orientacao do aparelho (preview segue em retrato)
+    CURRENT_PROJECT_VERSION: "15"         # build 15: so a foto segue a orientacao do aparelho (UI de volta em retrato)
     CODE_SIGN_STYLE: Automatic
     # #Predicate/consultas SwiftData geram warnings de concorrência (código da Apple);
     # mantém em minimal, mesmo racional dos outros apps.

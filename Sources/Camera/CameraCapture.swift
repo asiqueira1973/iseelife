@@ -93,7 +93,11 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
                 #endif
             }
 
-            let filtrada = self.pipeline.apply(self.receitaAtivaValores, to: base)
+            // Corrige a orientação do ARQUIVO: o frame vem no ângulo de preview; aplica a diferença
+            // (captura − preview) p/ salvar "nível de horizonte" (paisagem quando o telefone está
+            // na horizontal), sem a rotação dupla que apareceria no preview.
+            let orientada = self.rotacionarFrame(base, grausCW: self.deltaSilencioso)
+            let filtrada = self.pipeline.apply(self.receitaAtivaValores, to: orientada)
             let data = self.codificarJPEG(filtrada)
             DispatchQueue.main.async { completion(data) }
         }
@@ -114,6 +118,17 @@ extension CameraSession: AVCaptureVideoDataOutputSampleBufferDelegate {
         }
         photoDelegate = delegate
         photoOutput.capturePhoto(with: settings, delegate: delegate)
+    }
+
+    // Gira uma CIImage por um múltiplo de 90° no sentido horário (mesma convenção do
+    // videoRotationAngle). Usado p/ corrigir a orientação do arquivo na captura silenciosa.
+    func rotacionarFrame(_ img: CIImage, grausCW: Int) -> CIImage {
+        switch ((grausCW % 360) + 360) % 360 {
+        case 90:  return img.oriented(.right)
+        case 180: return img.oriented(.down)
+        case 270: return img.oriented(.left)
+        default:  return img
+        }
     }
 
     // Codifica uma CIImage em JPEG sRGB (usado pelos dois caminhos).

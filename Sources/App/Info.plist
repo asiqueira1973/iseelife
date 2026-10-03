@@ -43,7 +43,9 @@
 	<string>O I See Life usa a câmera do seu iPhone para o visor e para capturar as fotos. Nada sai do aparelho.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>O I See Life precisa de acesso para salvar as fotos que você captura direto na sua Fototeca.</string>
-	<!-- Orientação: retrato apenas no MVP (spec 17). -->
+	<!-- Orientação: UI em retrato. Só a FOTO segue a orientação física do aparelho (v1.4):
+	     o preview fica em retrato (confiável) e o arquivo sai em paisagem quando o telefone
+	     está na horizontal. Paisagem na UI inteira ficou pra depois (redesenho dos controles). -->
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>

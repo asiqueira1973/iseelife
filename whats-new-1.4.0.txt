@@ -1,0 +1,13 @@
+I See Life — What's New (versão 1.4.0, build 15)
+Feature: as fotos passam a respeitar a orientação do aparelho (horizontal sai em
+paisagem). A interface segue em retrato.
+App distribuído somente no Brasil — nota em pt-BR apenas.
+
+==============================================================================
+pt-BR (Português — Brasil)
+==============================================================================
+Fotos na orientação certa.
+
+• Segure o iPhone na horizontal e a foto sai em paisagem — do jeito que você enquadrou, sem mais imagens deitadas.
+
+Compra única, sem assinatura. 100% offline, direto na hora do disparo.

@@ -81,6 +81,12 @@ final class CameraSession: NSObject, ObservableObject {
     // Mantém o delegate de foto vivo durante a captura assíncrona.
     var photoDelegate: NSObject?
 
+    // Rotação de captura/preview conforme a orientação FÍSICA do aparelho (iOS 17+). A UI segue
+    // travada em retrato, mas a foto E o preview acompanham como o telefone é segurado
+    // (retrato/paisagem) — via o sensor, sem depender da orientação da interface.
+    private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
+    private var rotationObservation: NSKeyValueObservation?
+
     // Dispositivo ativo (usado pelos controles manuais em ManualCameraControls).
     var dispositivoAtivo: AVCaptureDevice? { currentDevice }
 
@@ -131,7 +137,7 @@ final class CameraSession: NSObject, ObservableObject {
         session.commitConfiguration()
         // Só AGORA, com o photoOutput conectado, dá pra setar a resolução máxima da foto real.
         aplicarMaxPhotoDimensions()
-        aplicarOrientacaoRetrato()
+        configurarRotationCoordinator()
 
         videoQueue.async { [weak self] in
             guard let self else { return }
@@ -146,6 +152,9 @@ final class CameraSession: NSObject, ObservableObject {
     // Encerra a sessão (economia de bateria — spec seção 17: não fica ativa em segundo plano).
     func parar() {
         pararShutterPriority()
+        rotationObservation?.invalidate()
+        rotationObservation = nil
+        rotationCoordinator = nil
         videoQueue.async { [weak self] in
             guard let self else { return }
             if self.session.isRunning { self.session.stopRunning() }
@@ -161,7 +170,7 @@ final class CameraSession: NSObject, ObservableObject {
         configurarEntrada(lente: lente)
         session.commitConfiguration()
         aplicarMaxPhotoDimensions()   // o formato pode ter mudado com a lente; reaplica
-        aplicarOrientacaoRetrato()
+        configurarRotationCoordinator()   // recria o coordenador p/ o novo device
     }
 
     private func configurarEntrada(lente: LenteCamera) {
@@ -268,14 +277,29 @@ final class CameraSession: NSObject, ObservableObject {
         }
     }
 
-    // Orientação retrato (spec seção 17). iOS 17+: videoRotationAngle em graus. Aplica no
-    // preview (videoOutput) e na captura real (photoOutput).
-    private func aplicarOrientacaoRetrato() {
+    // Orientação de captura/preview seguindo a orientação FÍSICA do aparelho (iOS 17+). Usa o
+    // AVCaptureDevice.RotationCoordinator, que lê o sensor e dá o ângulo "horizonte nivelado" —
+    // sem precisar mapear à mão as direções de paisagem. Recriado a cada troca de lente.
+    private func configurarRotationCoordinator() {
+        guard #available(iOS 17.0, *), let device = currentDevice else { return }
+        rotationObservation?.invalidate()
+        let coord = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
+        rotationCoordinator = coord
+        // .initial já aplica o ângulo atual; depois acompanha a rotação do aparelho em tempo real
+        // (preview e captura giram juntos), mesmo com a UI travada em retrato.
+        rotationObservation = coord.observe(
+            \.videoRotationAngleForHorizonLevelCapture, options: [.initial, .new]
+        ) { [weak self] coordenador, _ in
+            self?.aplicarAnguloRotacao(coordenador.videoRotationAngleForHorizonLevelCapture)
+        }
+    }
+
+    // Aplica o ângulo às conexões do preview (videoOutput) e da captura real (photoOutput).
+    private func aplicarAnguloRotacao(_ angulo: CGFloat) {
+        guard #available(iOS 17.0, *) else { return }
         for conn in [videoOutput.connection(with: .video), photoOutput.connection(with: .video)] {
-            guard let conn else { continue }
-            if #available(iOS 17.0, *), conn.isVideoRotationAngleSupported(90) {
-                conn.videoRotationAngle = 90
-            }
+            guard let conn, conn.isVideoRotationAngleSupported(angulo) else { continue }
+            conn.videoRotationAngle = angulo
         }
     }
 

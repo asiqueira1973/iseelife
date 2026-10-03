@@ -86,6 +86,10 @@ final class CameraSession: NSObject, ObservableObject {
     // (retrato/paisagem) — via o sensor, sem depender da orientação da interface.
     private var rotationCoordinator: AVCaptureDevice.RotationCoordinator?
     private var rotationObservation: NSKeyValueObservation?
+    // Diferença (captura − preview), em graus CW. O preview usa o ângulo de preview na conexão; a
+    // captura SILENCIOSA congela esse frame e precisa desta correção extra para salvar "nível de
+    // horizonte" (gravity-up), sem a dupla rotação da UI que gira junto.
+    var deltaSilencioso: Int = 0
 
     // Dispositivo ativo (usado pelos controles manuais em ManualCameraControls).
     var dispositivoAtivo: AVCaptureDevice? { currentDevice }
@@ -285,22 +289,28 @@ final class CameraSession: NSObject, ObservableObject {
         rotationObservation?.invalidate()
         let coord = AVCaptureDevice.RotationCoordinator(device: device, previewLayer: nil)
         rotationCoordinator = coord
-        // .initial já aplica o ângulo atual; depois acompanha a rotação do aparelho em tempo real
-        // (preview e captura giram juntos), mesmo com a UI travada em retrato.
+        // Observa o ângulo de PREVIEW (acompanha a rotação ao vivo). Dentro, lê também o de captura.
+        // .initial aplica já o estado atual.
         rotationObservation = coord.observe(
-            \.videoRotationAngleForHorizonLevelCapture, options: [.initial, .new]
-        ) { [weak self] coordenador, _ in
-            self?.aplicarAnguloRotacao(coordenador.videoRotationAngleForHorizonLevelCapture)
+            \.videoRotationAngleForHorizonLevelPreview, options: [.initial, .new]
+        ) { [weak self] c, _ in
+            self?.aplicarAngulos(preview: c.videoRotationAngleForHorizonLevelPreview,
+                                 captura: c.videoRotationAngleForHorizonLevelCapture)
         }
     }
 
-    // Aplica o ângulo às conexões do preview (videoOutput) e da captura real (photoOutput).
-    private func aplicarAnguloRotacao(_ angulo: CGFloat) {
+    // Preview (videoOutput) usa o ângulo de PREVIEW — como a UI gira junto, isso evita a rotação
+    // dupla. A foto real (photoOutput) usa o de CAPTURA (nível de horizonte). A captura silenciosa
+    // congela o frame do preview, então guardamos a diferença p/ corrigir só o arquivo.
+    private func aplicarAngulos(preview: CGFloat, captura: CGFloat) {
         guard #available(iOS 17.0, *) else { return }
-        for conn in [videoOutput.connection(with: .video), photoOutput.connection(with: .video)] {
-            guard let conn, conn.isVideoRotationAngleSupported(angulo) else { continue }
-            conn.videoRotationAngle = angulo
+        if let c = videoOutput.connection(with: .video), c.isVideoRotationAngleSupported(preview) {
+            c.videoRotationAngle = preview
         }
+        if let c = photoOutput.connection(with: .video), c.isVideoRotationAngleSupported(captura) {
+            c.videoRotationAngle = captura
+        }
+        deltaSilencioso = Int((captura - preview).rounded())
     }
 
     // MARK: - Frames de preview (delegate está na extensão abaixo)

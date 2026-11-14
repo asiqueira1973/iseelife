@@ -2,7 +2,7 @@
 
 App de câmera para iPhone com pegada de fotografia de rua: abre rápido, dispara rápido e produz JPEG com caráter, com "receitas" de cor aplicadas em tempo real no visor.
 
-[Baixar na App Store](https://apps.apple.com/br/app/i-see-life/id6799311673) · Versão Android: [iseelife-android](https://github.com/asiqueira1973/iseelife-android)
+[Baixar na App Store](https://apps.apple.com/br/app/i-see-life/id6799311673) · [Baixar na Google Play](https://play.google.com/store/apps/details?id=com.dablab.iseelife) · Código da versão Android: [iseelife-android](https://github.com/asiqueira1973/iseelife-android)
 
 <p>
   <img src="appstore%20screenshots/pt/01-heroi.png" width="160" alt="I See Life">
@@ -41,7 +41,7 @@ O repositório não tem testes automatizados; a validação de câmera e captura
 
 ## Status
 
-Publicado na App Store (iOS). A versão Android fica em um repositório separado.
+Publicado na App Store (iOS) e na Google Play (Android). A versão Android fica em um repositório separado.
 
 ## Licença
 
